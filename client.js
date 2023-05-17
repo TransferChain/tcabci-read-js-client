@@ -98,7 +98,7 @@ class TCAbciClient {
         }
 
         const message = new Message(true, MESSAGE_TYPE.SUBSCRIBE, addrs)
-console.log(addrs)
+
         this.#ws.send(message.ToJSON())
         this.#setSubscribeAddresses(addrs, true)
         this.#setSubscribed(true)
