@@ -1,0 +1,27 @@
+{
+  "name": "tcabci-read-js-client",
+  "version": "1.0.0",
+  "description": "TransferChain Fastest Read Network WebSocket Client",
+  "main": "client.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha --timeout 5000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TransferChain/tcabci-read-js-client.git"
+  },
+  "author": "TransferChain A.G <info@transferchain.io>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/TransferChain/tcabci-read-js-client/issues"
+  },
+  "homepage": "https://github.com/TransferChain/tcabci-read-js-client#readme",
+  "devDependencies": {
+    "mocha": "^10.2.0",
+    "unit.js": "^2.1.1"
+  },
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+}
