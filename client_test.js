@@ -23,48 +23,66 @@ describe("TCAbciClient TESTS", () => {
         } catch (e) {
             error = e
         }
-        unitJS.value(error.message).is(INVALID_URL.message)
+        unitJS.assert.equal(error.message, INVALID_URL.message)
     })
 
     it('should start with valid parameters',(done) => {
-        let start=false,
-            successCb = event=> {
-                start=true
-            }
         const client = new tcAbciClient(clientURL)
-        client.SetSuccess(successCb)
-        unitJS.promise
+        unitJS
+            .promise
             .given(client.Start())
-            .then(event => {
-                unitJS.assert.equal(true, start)
+            .then(() => {
+                const { connected, subscribed } = client.Status()
+                unitJS.assert.equal(connected, true)
+                unitJS.assert.equal(subscribed, false)
                 done()
             })
             .catch(err => {
-                console.log(err)
+                unitJS.assert.equal(null, err)
                 done(err)
             })
-            .done()
     })
 
     it('should subscribe with valid parameters',(done) => {
-        let start=false,
-            successCb = event=> {
-                start=true
-            }
         const client = new tcAbciClient(clientURL)
-        client.SetSuccess(successCb)
-        unitJS.promise
+        unitJS
+            .promise
             .given(client.Start())
-            .then(event => {
-                unitJS.assert.equal(true, start)
-                client.Subscribe([randomString(88), randomString(88), randomString(88)])
+            .then(() => {
+                client.Subscribe(["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"])
+                const { connected, subscribed } = client.Status()
+                unitJS.assert.equal(connected, true)
+                unitJS.assert.equal(subscribed, true)
                 done()
             })
             .catch(err => {
-                console.log(err)
+                unitJS.assert.equal(null, err)
                 done(err)
             })
-            .done()
+    })
+
+    it('should unsubscribe with valid parameters',(done) => {
+        const client = new tcAbciClient(clientURL)
+        unitJS
+            .promise
+            .given(client.Start())
+            .then(() => {
+                client.Subscribe(["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"])
+                const { connected, subscribed } = client.Status()
+                unitJS.assert.equal(connected, true)
+                unitJS.assert.equal(subscribed, true)
+            })
+            .then(() => {
+                client.Unsubscribe()
+                const { connected, subscribed } = client.Status()
+                unitJS.assert.equal(connected, true)
+                unitJS.assert.equal(subscribed, false)
+                done()
+            })
+            .catch(err => {
+                unitJS.assert.equal(null, err)
+                done(err)
+            })
     })
 
 })
