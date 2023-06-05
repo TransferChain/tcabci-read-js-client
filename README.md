@@ -7,7 +7,7 @@ Read Node WebSocket Address: [wss://read-node-01.transferchain.io/ws](wss://read
 ## Installation
 
 ```shell
-$ npm install tcabci-read-js-client 
+$ npm i @tchain/tcabci-read-js-client
 ```
 
 ## Example
@@ -15,7 +15,7 @@ $ npm install tcabci-read-js-client
 **Subscribe, Listen and Unsubscribe Example**
 
 ```js
-const tcAbciClient = require("tcabci-read-js-client")
+const tcAbciClient = require("@tchain/tcabci-read-js-client")
 
 const client = new tcAbciClient()
 

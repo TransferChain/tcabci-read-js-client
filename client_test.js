@@ -1,6 +1,7 @@
 const tcAbciClient = require("./client")
 const unitJS = require("unit.js")
-const {INVALID_ARGUMENTS, INVALID_URL} = require("./errors")
+const {INVALID_ARGUMENTS, INVALID_URL, TRANSACTION_TYPE_NOT_VALID} = require("./errors")
+const { TX_TYPE } = require("./constants")
 const {randomString} = require("./util")
 
 describe("TCAbciClient TESTS", () => {
@@ -70,17 +71,53 @@ describe("TCAbciClient TESTS", () => {
 
     it('should return transaction search result',(done) => {
         const client = new tcAbciClient()
-        client.TxSearch({ 
+        client.TxSearch({
                 heightOperator: ">=",
                 height: 0,
                 recipientAddrs: ["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"],
                 limit: 1,
                 offset: 0,
-                orderBy: "ASC" 
+                orderBy: "ASC"
             })
             .then(data => {
                 unitJS.value(data.txs).hasLength(1)
                 unitJS.assert.equal(data.total_count, 1)
+                done()
+            })
+            .catch(err => {
+                done(err)
+            })
+    })
+
+    it('should not broadcast transaction if type is incorrect',(done) => {
+        const client = new tcAbciClient()
+        try {
+            client.Broadcast({
+                type: "dummy type",
+                data: "",
+                sender_addr: "",
+                recipient_addr: ""
+            })
+        } catch (err) {
+            unitJS.assert.equal(TRANSACTION_TYPE_NOT_VALID, err)
+            done()
+        }
+    })
+
+    it('should not broadcast transaction',(done) => {
+        const client = new tcAbciClient()
+        client.Broadcast({
+            id: "dummy id",
+            version: 0,
+            type: TX_TYPE.TX_TYPE_ADDRESS,
+            data: btoa(JSON.stringify({data: ""})),
+            sender_addr: "2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN",
+            recipient_addr: "2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN",
+            sign: btoa("dummy sign"),
+            fee: 0
+        })
+            .then(data => {
+                unitJS.assert.notEqual(data.data.hash, "")
                 done()
             })
             .catch(err => {
