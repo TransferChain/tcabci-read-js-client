@@ -1,37 +1,37 @@
 const { INVALID_ARGUMENTS, INVALID_ARGUMENT_WITH_CS } = require("./errors")
 const { MESSAGE_TYPE } = require("./constants")
 class Message {
-    #isWeb = false
+    #is_web = false
     #type = ""
     #addrs = []
     constructor(isWeb, type, addrs) {
-        this.#isWeb = isWeb
+        this.#is_web = isWeb
         this.#type = type
         this.#addrs = addrs
     }
 
-     #validate() {
-        if (typeof this.#isWeb !== "boolean") {
-            throw new Error(INVALID_ARGUMENT_WITH_CS("isWeb"))
-        }
-        if (typeof this.#type !== "string") {
-            throw new Error(INVALID_ARGUMENT_WITH_CS("type"))
-        }
-        if (!Array.isArray(this.#addrs)) {
-            throw new Error(INVALID_ARGUMENT_WITH_CS("addrs"))
-        }
-        if ([MESSAGE_TYPE.SUBSCRIBE, MESSAGE_TYPE.UNSUBSCRIBE].indexOf(this.#type) === -1) {
-            throw new Error(INVALID_ARGUMENTS)
-        }
-    }
-
-    ToJSON() {
+    ToJSONString() {
         this.#validate()
         return JSON.stringify({
-            "is_web": this.#isWeb,
+            "is_web": this.#is_web,
             "type": this.#type,
             "addrs": this.#addrs
         })
+    }
+
+    #validate() {
+        if (typeof this.#is_web !== "boolean") {
+            throw INVALID_ARGUMENT_WITH_CS("is_web")
+        }
+        if (typeof this.#type !== "string") {
+            throw INVALID_ARGUMENT_WITH_CS("type")
+        }
+        if (!Array.isArray(this.#addrs)) {
+            throw INVALID_ARGUMENT_WITH_CS("addrs")
+        }
+        if ([MESSAGE_TYPE.SUBSCRIBE, MESSAGE_TYPE.UNSUBSCRIBE].indexOf(this.#type) === -1) {
+            throw INVALID_ARGUMENTS
+        }
     }
 }
 

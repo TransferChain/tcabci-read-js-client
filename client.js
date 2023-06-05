@@ -1,66 +1,63 @@
-const { INVALID_URL, NOT_CONNECTED, ALREADY_CONNECTED, INVALID_ARGUMENT_WITH_CS, INVALID_ARGUMENTS, NOT_SUBSCRIBED} = require("./errors")
+const {
+    NOT_CONNECTED,
+    ALREADY_CONNECTED,
+    INVALID_ARGUMENTS,
+    NOT_SUBSCRIBED,
+    ADDRESSES_IS_EMPTY,
+    BLOCK_NOT_FOUND
+} = require("./errors")
+const {MESSAGE_TYPE, READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS} = require("./constants")
+const Transaction = require("./transaction")
 const Message = require("./message")
-const {MESSAGE_TYPE} = require("./constants");
+const {toJSON} = require("./util")
+const axios = require("axios")
 
 class TCAbciClient {
-    #listenCb = null
-    #wsURL = ""
     #subscribed = false
     #subscribedAddresses = []
     #connected = false
-    #socketURL = ""
     #version = "v0.1.0"
-    #errorCb = null
-    #successCb = null
+    errorCb = null
+    listenCb = null
     #ws = null
+    #httpClient = null
 
-    constructor(socketURL) {
-        const wsURL = new URL(socketURL)
-        if (["wss:", "ws:"].indexOf(wsURL.protocol) === -1) {
-            throw INVALID_URL
-        }
-        this.#wsURL = wsURL
-        this.#socketURL = socketURL
+    constructor() {
+        this.#httpClient = axios.create({
+            baseURL: READ_NODE_ADDRESS,
+            timeout: 10000,
+            headers: {'Client': `tcabaci-read-js-client${this.#version}`}
+          })
     }
 
     SetError(cb) {
-        this.#errorCb = cb
+        this.errorCb = cb
     }
-
-    SetSuccess(cb) {
-        this.#successCb = cb
-    }
-
     SetListen(cb) {
-        this.#listenCb = cb
+        this.listenCb = cb
     }
-
     Start() {
         return new Promise((resolve, reject) => {
             if (this.#getConnected()) {
                 reject(ALREADY_CONNECTED)
             }
             const wsClient = this.#wsClient()
-            this.#ws = new wsClient(this.#wsURL)
+            this.#ws = new wsClient(READ_NODE_WS_ADDRESS)
+
             this.#ws.onerror = (event) => {
                 this.#setConnected(false)
-                if (this.#errorCb) {
-                    this.#errorCb(event)
+                if (this.errorCb) {
+                    this.errorCb(event.error)
                 }
                 reject(event)
             }
             this.#ws.onopen = (event) => {
                 this.#setConnected(true)
-                if (this.#successCb) {
-                    this.#successCb(event)
-                }
                 resolve(event)
             }
-
             this.#ws.onmessage = this.#listen
         })
     }
-
     Stop() {
         if (!this.#getConnected()) {
             throw NOT_CONNECTED
@@ -69,23 +66,18 @@ class TCAbciClient {
         this.#setConnected(false)
         this.#setSubscribed(false)
     }
-
     Subscribe(addresses) {
         if (!Array.isArray(addresses)) {
             throw INVALID_ARGUMENTS
         }
-
         if (!this.#getConnected()) {
             throw NOT_CONNECTED
         }
-
         let addrs = []
         if (addresses.length === 0) {
             throw ADDRESSES_IS_EMPTY
         }
-
         addrs = addresses
-
         if (this.#getSubscribeAddresses().length > 0) {
             let newAddress = []
             for (let i = 0; i < addresses.length; i++) {
@@ -93,28 +85,75 @@ class TCAbciClient {
                     newAddress.push(addresses[i])
                 }
             }
-
             addrs = newAddress
         }
-
         const message = new Message(true, MESSAGE_TYPE.SUBSCRIBE, addrs)
-console.log(addrs)
-        this.#ws.send(message.ToJSON())
+        this.#ws.send(message.ToJSONString())
         this.#setSubscribeAddresses(addrs, true)
         this.#setSubscribed(true)
     }
-
     Unsubscribe() {
         if (!this.#getSubscribed()) {
             throw NOT_SUBSCRIBED
         }
-        const message = new Message(true, MESSAGE_TYPE.UNSUBSCRIBE, this.#getSubscribeAddresses())
-
-        this.#ws.send(message.ToJSON())
+        this.#ws.send(new Message(true, MESSAGE_TYPE.UNSUBSCRIBE, this.#getSubscribeAddresses()).ToJSONString())
         this.#setSubscribed(false)
         this.#setSubscribeAddresses([])
     }
+    LastBlock() {
+        return this.#httpClient.get("/v1/blocks?limit=1&offset=0")
+            .then(res => { return { blocks: res.data.data, total_count: res.data.total_count } } )
+            .catch(e => {
+                throw BLOCK_NOT_FOUND
+            })
+    }
+    TxSearch({heightOperator, height, recipientAddrs, senderAddrs, hashes, typ, limit, offset, orderField, orderBy}) {
+        return this.#httpClient.post(
+                "/v1/tx_search/p",
+                {
+                    height: `${heightOperator} ${height}`,
+                    recipient_addrs: recipientAddrs,
+                    sender_addrs: senderAddrs,
+                    hashes: hashes,
+                    typ,
+                    limit,
+                    offset,
+                    order_field: orderField,
+                    order_by: orderBy
+                })
+                .then(res => { return {txs: res.data.data, total_count: res.data.data.length} })
+                .catch(e => {
+                    switch (e.response.status) {
+                        case 400:
+                            throw INVALID_ARGUMENTS
+                        default:
+                            throw e
+                    }
+                })
+    }
+    Status() {
+        return {
+            connected: this.#connected,
+            subscribed: this.#subscribed,
+        }
+    }
 
+    #wsClient() {
+        if (typeof window !== "undefined") {
+            return window.WebSocket
+        }
+        const { WebSocket } = require("ws")
+        return WebSocket
+    }
+    #listen(message) {
+        if (message.data === "OK" && message.data.length < 10) {
+            return { status: message.data }
+        }
+        const txData = toJSON(message.data)
+        if (this.listenCb) {
+            this.listenCb(new Transaction(txData).ToJSONString())
+        }
+    }
     #getConnected() {
         return this.#connected
     }
@@ -127,9 +166,6 @@ console.log(addrs)
     #setSubscribed(value) {
         this.#subscribed = value
     }
-    #listen(message) {
-        console.log(message)
-    }
     #getSubscribeAddresses() {
         return this.#subscribedAddresses
     }
@@ -139,14 +175,6 @@ console.log(addrs)
             return
         }
         this.#subscribedAddresses = addresses
-    }
-    #wsClient() {
-        if (typeof window !== "undefined") {
-            return window.WebSocket
-        }
-
-        const { WebSocket } = require("ws")
-        return WebSocket
     }
 }
 

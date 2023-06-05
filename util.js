@@ -11,6 +11,11 @@ const randomString = (length) => {
     return result;
 }
 
+const toJSON = (data) => {
+    return JSON.parse(data)
+}
+
 module.exports = {
-    randomString
+    randomString,
+    toJSON
 }
