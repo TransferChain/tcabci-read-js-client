@@ -15,6 +15,8 @@ $ npm install tcabci-read-js-client
 **Subscribe, Listen and Unsubscribe Example**
 
 ```js
+const tcAbciClient = require("tcabci-read-js-client")
+
 const client = new tcAbciClient()
 
 client.Start()
