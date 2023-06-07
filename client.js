@@ -4,9 +4,11 @@ const {
     INVALID_ARGUMENTS,
     NOT_SUBSCRIBED,
     ADDRESSES_IS_EMPTY,
-    BLOCK_NOT_FOUND
+    BLOCK_NOT_FOUND,
+    TRANSACTION_TYPE_NOT_VALID,
+    TRANSACTION_NOT_BROADCAST
 } = require("./errors")
-const {MESSAGE_TYPE, READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS} = require("./constants")
+const {MESSAGE_TYPE, READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS, TX_TYPE} = require("./constants")
 const Transaction = require("./transaction")
 const Message = require("./message")
 const {toJSON} = require("./util")
@@ -55,7 +57,15 @@ class TCAbciClient {
                 this.#setConnected(true)
                 resolve(event)
             }
-            this.#ws.onmessage = this.#listen
+            this.#ws.onmessage = (message) => {
+                if (message.data === "OK" && message.data.length < 10) {
+                    return { status: message.data }
+                }
+                if (this.listenCb) {
+                    this.listenCb(toJSON(message.data))
+                }
+            }
+
         })
     }
     Stop() {
@@ -137,6 +147,26 @@ class TCAbciClient {
             subscribed: this.#subscribed,
         }
     }
+    Broadcast({id, version, type, data, sender_addr, recipient_addr, sign, fee}) {
+        if(Object.values(TX_TYPE).indexOf(type) < 0) {
+            throw TRANSACTION_TYPE_NOT_VALID
+        }
+
+        return this.#httpClient.post(
+            "/v1/broadcast",
+            {
+                id,
+                version,
+                type,
+                data,
+                sender_addr,
+                recipient_addr,
+                sign,
+                fee
+            }
+        ).then(res => { return { data: res.data.data } })
+            .catch(e => { throw TRANSACTION_NOT_BROADCAST })
+    }
 
     #wsClient() {
         if (typeof window !== "undefined") {
@@ -144,15 +174,6 @@ class TCAbciClient {
         }
         const { WebSocket } = require("ws")
         return WebSocket
-    }
-    #listen(message) {
-        if (message.data === "OK" && message.data.length < 10) {
-            return { status: message.data }
-        }
-        const txData = toJSON(message.data)
-        if (this.listenCb) {
-            this.listenCb(new Transaction(txData).ToJSONString())
-        }
     }
     #getConnected() {
         return this.#connected

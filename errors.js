@@ -8,5 +8,7 @@ module.exports = {
     NOT_SUBSCRIBED: new Error("Not subscribed"),
     ALREADY_SUBSCRIBED: new Error("Already subscribed"),
     ADDRESSES_IS_EMPTY: new Error("Addresses is empty"),
-    BLOCK_NOT_FOUND: new Error("Block does not exist")
+    BLOCK_NOT_FOUND: new Error("Block does not exist"),
+    TRANSACTION_TYPE_NOT_VALID: new Error("Transaction type is not valid"),
+    TRANSACTION_NOT_BROADCAST: new Error("Transaction can not be broadcast")
 }
