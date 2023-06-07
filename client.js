@@ -57,7 +57,15 @@ class TCAbciClient {
                 this.#setConnected(true)
                 resolve(event)
             }
-            this.#ws.onmessage = this.#listen
+            this.#ws.onmessage = (message) => {
+                if (message.data === "OK" && message.data.length < 10) {
+                    return { status: message.data }
+                }
+                if (this.listenCb) {
+                    this.listenCb(toJSON(message.data))
+                }
+            }
+
         })
     }
     Stop() {
@@ -166,15 +174,6 @@ class TCAbciClient {
         }
         const { WebSocket } = require("ws")
         return WebSocket
-    }
-    #listen(message) {
-        if (message.data === "OK" && message.data.length < 10) {
-            return { status: message.data }
-        }
-        const txData = toJSON(message.data)
-        if (this.listenCb) {
-            this.listenCb(new Transaction(txData).ToJSONString())
-        }
     }
     #getConnected() {
         return this.#connected
