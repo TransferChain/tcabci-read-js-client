@@ -18,6 +18,9 @@ $ npm i @tchain/tcabci-read-js-client
 const tcAbciClient = require("@tchain/tcabci-read-js-client")
 
 const client = new tcAbciClient()
+// OR
+const client = new tcAbciClient(['https://read-node-01.transferchain.io',
+    'wss://read-node-01.transferchain.io/ws'])
 
 client.Start()
 

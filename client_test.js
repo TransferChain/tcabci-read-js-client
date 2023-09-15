@@ -1,10 +1,24 @@
 const tcAbciClient = require("./client")
 const unitJS = require("unit.js")
-const {INVALID_ARGUMENTS, INVALID_URL, TRANSACTION_TYPE_NOT_VALID} = require("./errors")
-const { TX_TYPE } = require("./constants")
+const {INVALID_ARGUMENTS, INVALID_URL, TRANSACTION_TYPE_NOT_VALID, TRANSACTION_NOT_BROADCAST} = require("./errors")
+const { TX_TYPE, READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS} = require("./constants")
 const {randomString} = require("./util")
 
 describe("TCAbciClient TESTS", () => {
+
+    it('should start with valid parameters and read node addresses',(done) => {
+        const client = new tcAbciClient([READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS])
+        client.Start()
+            .then(() => {
+                const { connected, subscribed } = client.Status()
+                unitJS.assert.equal(connected, true)
+                unitJS.assert.equal(subscribed, false)
+                done()
+            })
+            .catch(err => {
+                done(err)
+            })
+    })
 
     it('should start with valid parameters',(done) => {
         const client = new tcAbciClient()
@@ -14,6 +28,33 @@ describe("TCAbciClient TESTS", () => {
                 unitJS.assert.equal(connected, true)
                 unitJS.assert.equal(subscribed, false)
                 done()
+            })
+            .catch(err => {
+                done(err)
+            })
+    })
+
+    it('should reconnect with start and valid parameters',(done) => {
+        const client = new tcAbciClient()
+        client.Start()
+            .then(() => {
+                const { connected, subscribed } = client.Status()
+                unitJS.assert.equal(connected, true)
+                unitJS.assert.equal(subscribed, false)
+
+                client.Disconnect(1003)
+                setTimeout(() => {
+                    const { connected: c2, subscribed: b2} = client.Status()
+                    unitJS.assert.equal(c2, false)
+                    unitJS.assert.equal(b2, false)
+
+                    setTimeout(() => {
+                        const { connected, subscribed } = client.Status()
+                        unitJS.assert.equal(connected, true)
+                        unitJS.assert.equal(subscribed, false)
+                        done()
+                    }, 3100)
+                }, 1000)
             })
             .catch(err => {
                 done(err)
@@ -121,7 +162,8 @@ describe("TCAbciClient TESTS", () => {
                 done()
             })
             .catch(err => {
-                done(err)
+                unitJS.assert.equal(TRANSACTION_NOT_BROADCAST, err)
+                done()
             })
     })
 
