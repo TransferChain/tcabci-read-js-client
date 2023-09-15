@@ -19,14 +19,21 @@ class TCAbciClient {
     #subscribedAddresses = []
     #connected = false
     #version = "v0.1.0"
+    #retrieverCount = 0
     errorCb = null
     listenCb = null
     #ws = null
     #httpClient = null
+    #readNodeAddress = READ_NODE_ADDRESS
+    #readNodeWSAddress = READ_NODE_WS_ADDRESS
 
-    constructor() {
+    constructor(readNodeAddresses = []) {
+        if (readNodeAddresses.length === 2) {
+            this.#readNodeAddress = readNodeAddresses[0]
+            this.#readNodeWSAddress = readNodeAddresses[1]
+        }
         this.#httpClient = axios.create({
-            baseURL: READ_NODE_ADDRESS,
+            baseURL: this.#readNodeAddress,
             timeout: 10000,
             headers: {'Client': `tcabaci-read-js-client${this.#version}`}
           })
@@ -39,34 +46,7 @@ class TCAbciClient {
         this.listenCb = cb
     }
     Start() {
-        return new Promise((resolve, reject) => {
-            if (this.#getConnected()) {
-                reject(ALREADY_CONNECTED)
-            }
-            const wsClient = this.#wsClient()
-            this.#ws = new wsClient(READ_NODE_WS_ADDRESS)
-
-            this.#ws.onerror = (event) => {
-                this.#setConnected(false)
-                if (this.errorCb) {
-                    this.errorCb(event.error)
-                }
-                reject(event)
-            }
-            this.#ws.onopen = (event) => {
-                this.#setConnected(true)
-                resolve(event)
-            }
-            this.#ws.onmessage = (message) => {
-                if (message.data === "OK" && message.data.length < 10) {
-                    return { status: message.data }
-                }
-                if (this.listenCb) {
-                    this.listenCb(toJSON(message.data))
-                }
-            }
-
-        })
+        return this.#connect()
     }
     Stop() {
         if (!this.#getConnected()) {
@@ -166,6 +146,52 @@ class TCAbciClient {
             }
         ).then(res => { return { data: res.data.data } })
             .catch(e => { throw TRANSACTION_NOT_BROADCAST })
+    }
+
+    Disconnect(code = 1000) {
+        if (this.#getConnected()) {
+            this.#ws.close(code)
+        }
+    }
+
+    #connect() {
+        return new Promise((resolve, reject) => {
+            if (this.#getConnected()) {
+                reject(ALREADY_CONNECTED)
+            }
+            const wsClient = this.#wsClient()
+            this.#ws = new wsClient(this.#readNodeWSAddress)
+
+            this.#ws.onerror = (event) => {
+                this.#setConnected(false)
+                if (this.errorCb) {
+                    this.errorCb(event.error)
+                }
+                reject(event)
+            }
+            this.#ws.onopen = (event) => {
+                this.#setConnected(true)
+                this.#retrieverCount = 0
+                resolve(event)
+            }
+            this.#ws.onmessage = (message) => {
+                if (message.data === "OK" && message.data.length < 10) {
+                    return { status: message.data }
+                }
+                if (this.listenCb) {
+                    this.listenCb(toJSON(message.data))
+                }
+            }
+            this.#ws.onclose = (event) => {
+                this.#setConnected(false)
+                if (event.code !== 1000 && this.#retrieverCount <= 10) {
+                    this.#retrieverCount++
+                    setTimeout(() => {
+                        this.#connect().catch(() => {})
+                    }, 3000)
+                }
+            }
+        })
     }
 
     #wsClient() {
