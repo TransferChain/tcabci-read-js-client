@@ -15,27 +15,27 @@ const {toJSON} = require("./util")
 const axios = require("axios")
 
 class TCAbciClient {
-    #subscribed = false
-    #subscribedAddresses = []
-    #connected = false
-    #version = "v0.1.0"
-    #retrieverCount = 0
+    subscribed = false
+    subscribedAddresses = []
+    connected = false
+    version = "v0.1.0"
+    retrieverCount = 0
     errorCb = null
     listenCb = null
-    #ws = null
-    #httpClient = null
-    #readNodeAddress = READ_NODE_ADDRESS
-    #readNodeWSAddress = READ_NODE_WS_ADDRESS
+    ws = null
+    httpClient = null
+    readNodeAddress = READ_NODE_ADDRESS
+    readNodeWSAddress = READ_NODE_WS_ADDRESS
 
     constructor(readNodeAddresses = []) {
         if (readNodeAddresses.length === 2) {
-            this.#readNodeAddress = readNodeAddresses[0]
-            this.#readNodeWSAddress = readNodeAddresses[1]
+            this.readNodeAddress = readNodeAddresses[0]
+            this.readNodeWSAddress = readNodeAddresses[1]
         }
-        this.#httpClient = axios.create({
-            baseURL: this.#readNodeAddress,
+        this.httpClient = axios.create({
+            baseURL: this.readNodeAddress,
             timeout: 10000,
-            headers: {'Client': `tcabaci-read-js-client${this.#version}`}
+            headers: {'Client': `tcabaci-read-js-client${this.version}`}
           })
     }
 
@@ -46,21 +46,21 @@ class TCAbciClient {
         this.listenCb = cb
     }
     Start() {
-        return this.#connect()
+        return this.connect()
     }
     Stop() {
-        if (!this.#getConnected()) {
+        if (!this.getConnected()) {
             throw NOT_CONNECTED
         }
-        this.#ws.close()
-        this.#setConnected(false)
-        this.#setSubscribed(false)
+        this.ws.close()
+        this.setConnected(false)
+        this.setSubscribed(false)
     }
     Subscribe(addresses) {
         if (!Array.isArray(addresses)) {
             throw INVALID_ARGUMENTS
         }
-        if (!this.#getConnected()) {
+        if (!this.getConnected()) {
             throw NOT_CONNECTED
         }
         let addrs = []
@@ -68,37 +68,37 @@ class TCAbciClient {
             throw ADDRESSES_IS_EMPTY
         }
         addrs = addresses
-        if (this.#getSubscribeAddresses().length > 0) {
+        if (this.getSubscribeAddresses().length > 0) {
             let newAddress = []
             for (let i = 0; i < addresses.length; i++) {
-                if (this.#getSubscribeAddresses().indexOf(addresses[i]) === -1 ){
+                if (this.getSubscribeAddresses().indexOf(addresses[i]) === -1 ){
                     newAddress.push(addresses[i])
                 }
             }
             addrs = newAddress
         }
         const message = new Message(true, MESSAGE_TYPE.SUBSCRIBE, addrs)
-        this.#ws.send(message.ToJSONString())
-        this.#setSubscribeAddresses(addrs, true)
-        this.#setSubscribed(true)
+        this.ws.send(message.ToJSONString())
+        this.setSubscribeAddresses(addrs, true)
+        this.setSubscribed(true)
     }
     Unsubscribe() {
-        if (!this.#getSubscribed()) {
+        if (!this.getSubscribed()) {
             throw NOT_SUBSCRIBED
         }
-        this.#ws.send(new Message(true, MESSAGE_TYPE.UNSUBSCRIBE, this.#getSubscribeAddresses()).ToJSONString())
-        this.#setSubscribed(false)
-        this.#setSubscribeAddresses([])
+        this.ws.send(new Message(true, MESSAGE_TYPE.UNSUBSCRIBE, this.getSubscribeAddresses()).ToJSONString())
+        this.setSubscribed(false)
+        this.setSubscribeAddresses([])
     }
     LastBlock() {
-        return this.#httpClient.get("/v1/blocks?limit=1&offset=0")
+        return this.httpClient.get("/v1/blocks?limit=1&offset=0")
             .then(res => { return { blocks: res.data.data, total_count: res.data.total_count } } )
             .catch(e => {
                 throw BLOCK_NOT_FOUND
             })
     }
     TxSearch({heightOperator, height, recipientAddrs, senderAddrs, hashes, typ, limit, offset, orderField, orderBy}) {
-        return this.#httpClient.post(
+        return this.httpClient.post(
                 "/v1/tx_search/p",
                 {
                     height: `${heightOperator} ${height}`,
@@ -123,8 +123,8 @@ class TCAbciClient {
     }
     Status() {
         return {
-            connected: this.#connected,
-            subscribed: this.#subscribed,
+            connected: this.connected,
+            subscribed: this.subscribed,
         }
     }
     Broadcast({id, version, type, data, sender_addr, recipient_addr, sign, fee}) {
@@ -132,7 +132,7 @@ class TCAbciClient {
             throw TRANSACTION_TYPE_NOT_VALID
         }
 
-        return this.#httpClient.post(
+        return this.httpClient.post(
             "/v1/broadcast",
             {
                 id,
@@ -149,32 +149,32 @@ class TCAbciClient {
     }
 
     Disconnect(code = 1000) {
-        if (this.#getConnected()) {
-            this.#ws.close(code)
+        if (this.getConnected()) {
+            this.ws.close(code)
         }
     }
 
-    #connect() {
+    connect() {
         return new Promise((resolve, reject) => {
-            if (this.#getConnected()) {
+            if (this.getConnected()) {
                 reject(ALREADY_CONNECTED)
             }
-            const wsClient = this.#wsClient()
-            this.#ws = new wsClient(this.#readNodeWSAddress)
+            const wsClient = this.wsClient()
+            this.ws = new wsClient(this.readNodeWSAddress)
 
-            this.#ws.onerror = (event) => {
-                this.#setConnected(false)
+            this.ws.onerror = (event) => {
+                this.setConnected(false)
                 if (this.errorCb) {
                     this.errorCb(event.error)
                 }
                 reject(event)
             }
-            this.#ws.onopen = (event) => {
-                this.#setConnected(true)
-                this.#retrieverCount = 0
+            this.ws.onopen = (event) => {
+                this.setConnected(true)
+                this.retrieverCount = 0
                 resolve(event)
             }
-            this.#ws.onmessage = (message) => {
+            this.ws.onmessage = (message) => {
                 if (message.data === "OK" && message.data.length < 10) {
                     return { status: message.data }
                 }
@@ -182,46 +182,46 @@ class TCAbciClient {
                     this.listenCb(toJSON(message.data))
                 }
             }
-            this.#ws.onclose = (event) => {
-                this.#setConnected(false)
-                if (event.code !== 1000 && this.#retrieverCount <= 10) {
-                    this.#retrieverCount++
+            this.ws.onclose = (event) => {
+                this.setConnected(false)
+                if (event.code !== 1000 && this.retrieverCount <= 10) {
+                    this.retrieverCount++
                     setTimeout(() => {
-                        this.#connect().catch(() => {})
+                        this.connect().catch(() => {})
                     }, 3000)
                 }
             }
         })
     }
 
-    #wsClient() {
+    wsClient() {
         if (typeof window !== "undefined") {
             return window.WebSocket
         }
         const { WebSocket } = require("ws")
         return WebSocket
     }
-    #getConnected() {
-        return this.#connected
+    getConnected() {
+        return this.connected
     }
-    #setConnected(value) {
-        this.#connected = value
+    setConnected(value) {
+        this.connected = value
     }
-    #getSubscribed() {
-        return this.#subscribed
+    getSubscribed() {
+        return this.subscribed
     }
-    #setSubscribed(value) {
-        this.#subscribed = value
+    setSubscribed(value) {
+        this.subscribed = value
     }
-    #getSubscribeAddresses() {
-        return this.#subscribedAddresses
+    getSubscribeAddresses() {
+        return this.subscribedAddresses
     }
-    #setSubscribeAddresses(addresses, push = false) {
+    setSubscribeAddresses(addresses, push = false) {
         if (push) {
-            this.#subscribedAddresses.push(...addresses)
+            this.subscribedAddresses.push(...addresses)
             return
         }
-        this.#subscribedAddresses = addresses
+        this.subscribedAddresses = addresses
     }
 }
 
