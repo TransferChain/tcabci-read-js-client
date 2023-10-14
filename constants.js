@@ -30,6 +30,11 @@ module.exports = {
         TX_TYPE_REQUEST: "request",
         TX_TYPE_REQUEST_IN: "request_in",
         TX_TYPE_REQUEST_UPLOAD: "request_upload",
-        TX_TYPE_REQUEST_CANCEL: "request_Cancel"
+        TX_TYPE_REQUEST_CANCEL: "request_Cancel",
+        TX_TYPE_DATA_ROOM: "data_room",
+        TX_TYPE_DATA_ROOMF: "data_roomF",
+        TX_TYPE_DATA_ROOM_POLICY: "data_room_policy",
+        TX_TYPE_DATA_ROOM_DATA: "data_room_data",
+        TX_TYPE_DATA_ROOM_DATA_DELETE: "data_room_data_delete",
     }
 }
