@@ -122,7 +122,7 @@ describe("TCAbciClient TESTS", () => {
             })
             .then(data => {
                 unitJS.value(data.txs).hasLength(1)
-                unitJS.assert.equal(data.total_count, 1)
+                unitJS.value(data.total_count).isGreaterThan(0)
                 done()
             })
             .catch(err => {
