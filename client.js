@@ -111,7 +111,11 @@ class TCAbciClient {
                     order_field: orderField,
                     order_by: orderBy
                 })
-                .then(res => { return {txs: res.data.data, total_count: res.data.data.length} })
+                .then(res => {
+                    return {
+                        txs: res.data.data, total_count: res.data.total_count
+                    }
+                })
                 .catch(e => {
                     switch (e.response.status) {
                         case 400:
