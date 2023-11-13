@@ -1,6 +1,6 @@
 {
   "name": "@tchain/tcabci-read-js-client",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "TransferChain Fastest Read Network WebSocket Client",
   "main": "client.js",
   "type": "commonjs",
