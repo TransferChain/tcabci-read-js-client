@@ -52,7 +52,7 @@ class TCAbciClient {
         if (!this.getConnected()) {
             throw NOT_CONNECTED
         }
-        this.ws.close()
+        this.Disconnect(1000)
         this.setConnected(false)
         this.setSubscribed(false)
     }
