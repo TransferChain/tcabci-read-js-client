@@ -167,4 +167,33 @@ describe("TCAbciClient TESTS", () => {
             })
     })
 
+    it('should error in bulk tx if addresses count is zero',(done) => {
+        const client = new tcAbciClient()
+        client.Bulk([])
+            .then(() => {
+                done(new Error('invalid return'))
+            })
+            .catch((err) => {
+              unitJS.assert.equal(400, err.response.status)
+              done()
+            })
+    })
+
+    it('should error in bulk tx if addresses count is greater than 251',(done) => {
+        const addresses = []
+
+        for (var i = 0; i < 252; i++) {
+            addresses.push("2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN")
+        }
+
+        const client = new tcAbciClient()
+        client.Bulk(addresses)
+            .then(() => {
+                done(new Error('invalid return'))
+            })
+            .catch((err) => {
+                unitJS.assert.equal(400, err.response.status)
+                done()
+            })
+    })
 })

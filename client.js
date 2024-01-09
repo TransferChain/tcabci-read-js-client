@@ -137,7 +137,7 @@ class TCAbciClient {
         }
 
         return this.httpClient.post(
-            "/v1/broadcast",
+            "/v1/tx",
             {
                 id,
                 version,
@@ -150,6 +150,10 @@ class TCAbciClient {
             }
         ).then(res => { return { data: res.data.data } })
             .catch(e => { throw TRANSACTION_NOT_BROADCAST })
+    }
+
+    Bulk(addresses = []) {
+        return this.httpClient.post('/v1/bulk_tx', { addresses: addresses })
     }
 
     Disconnect(code = 1000) {
