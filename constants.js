@@ -36,5 +36,6 @@ module.exports = {
         TX_TYPE_DATA_ROOM_POLICY: "data_room_policy",
         TX_TYPE_DATA_ROOM_DATA: "data_room_data",
         TX_TYPE_DATA_ROOM_DATA_DELETE: "data_room_data_delete",
+        TX_TYPE_DATA_ROOM_DATA_POLICY: "data_room_data_policy",
     }
 }
