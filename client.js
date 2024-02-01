@@ -1,4 +1,4 @@
-const ReconnectingWebSocket = require('reconnecting-websocket')
+const ReconnectingWebSocket = require('reconnecting-websocket/dist/reconnecting-websocket-cjs')
 const {
     NOT_CONNECTED,
     ALREADY_CONNECTED,
