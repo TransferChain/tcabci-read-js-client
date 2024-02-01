@@ -128,6 +128,22 @@ describe("TCAbciClient TESTS", () => {
             })
     })
 
+  it('should return transaction summary result',(done) => {
+    const client = new tcAbciClient()
+    client.TxSummary({
+      recipientAddrs: ["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"],
+    })
+      .then(data => {
+        unitJS.value(data.last_block_height).isGreaterThan(0)
+        unitJS.value(data.total_count).isGreaterThan(0)
+        unitJS.value(data.last_transaction).isNotEmpty()
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
+
     it('should not broadcast transaction if type is incorrect',(done) => {
         const client = new tcAbciClient()
         try {

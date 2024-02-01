@@ -99,6 +99,30 @@ class TCAbciClient {
                 throw BLOCK_NOT_FOUND
             })
     }
+    TxSummary({recipientAddrs, senderAddrs, typ}) {
+        return this.httpClient.post(
+          "/v1/tx_summary",
+          {
+              recipient_addrs: recipientAddrs,
+              sender_addrs: senderAddrs,
+              typ: typ,
+          })
+          .then(res => {
+              return {
+                  last_block_height: res.data.data.last_block_height,
+                  last_transaction: res.data.data.last_transaction,
+                  total_count: res.data.total_count,
+              }
+          })
+          .catch(e => {
+              switch (e.response.status) {
+                  case 400:
+                      throw INVALID_ARGUMENTS
+                  default:
+                      throw e
+              }
+          })
+    }
     TxSearch({heightOperator, height, recipientAddrs, senderAddrs, hashes, typ, limit, offset, orderField, orderBy}) {
         return this.httpClient.post(
                 "/v1/tx_search/p",
