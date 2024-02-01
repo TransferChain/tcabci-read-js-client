@@ -1,4 +1,4 @@
-const ReconnectingWebSocket = require('reconnecting-websocket')
+const ReconnectingWebSocket = require('reconnecting-websocket/dist/reconnecting-websocket-cjs')
 const {
     NOT_CONNECTED,
     ALREADY_CONNECTED,
@@ -19,7 +19,7 @@ class TCAbciClient {
     subscribed = false
     subscribedAddresses = []
     connected = false
-    version = "v1.3.0"
+    version = "v1.3.1"
     errorCb = null
     listenCb = null
     ws = null
