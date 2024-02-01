@@ -1,3 +1,4 @@
+const ReconnectingWebSocket = require('reconnecting-websocket')
 const {
     NOT_CONNECTED,
     ALREADY_CONNECTED,
@@ -18,8 +19,7 @@ class TCAbciClient {
     subscribed = false
     subscribedAddresses = []
     connected = false
-    version = "v0.1.0"
-    retrieverCount = 0
+    version = "v1.2.1"
     errorCb = null
     listenCb = null
     ws = null
@@ -38,7 +38,9 @@ class TCAbciClient {
             headers: {'Client': `tcabaci-read-js-client${this.version}`}
           })
     }
-
+    Socket() {
+        return this.ws
+    }
     SetError(cb) {
         this.errorCb = cb
     }
@@ -96,6 +98,30 @@ class TCAbciClient {
             .catch(e => {
                 throw BLOCK_NOT_FOUND
             })
+    }
+    TxSummary({recipientAddrs, senderAddrs, typ}) {
+        return this.httpClient.post(
+          "/v1/tx_summary",
+          {
+              recipient_addrs: recipientAddrs,
+              sender_addrs: senderAddrs,
+              typ: typ,
+          })
+          .then(res => {
+              return {
+                  last_block_height: res.data.data.last_block_height,
+                  last_transaction: res.data.data.last_transaction,
+                  total_count: res.data.total_count,
+              }
+          })
+          .catch(e => {
+              switch (e.response.status) {
+                  case 400:
+                      throw INVALID_ARGUMENTS
+                  default:
+                      throw e
+              }
+          })
     }
     TxSearch({heightOperator, height, recipientAddrs, senderAddrs, hashes, typ, limit, offset, orderField, orderBy}) {
         return this.httpClient.post(
@@ -162,13 +188,25 @@ class TCAbciClient {
         }
     }
 
+    Reconnect(code = 1000) {
+        if (this.getConnected()) {
+            this.ws.reconnect(code)
+        }
+    }
+
     connect() {
         return new Promise((resolve, reject) => {
             if (this.getConnected()) {
                 reject(ALREADY_CONNECTED)
             }
-            const wsClient = this.wsClient()
-            this.ws = new wsClient(this.readNodeWSAddress)
+
+            const options = {
+                WebSocket:  this.wsClient(),
+                connectionTimeout: 1000,
+                maxRetries: 10,
+            }
+
+            this.ws = new ReconnectingWebSocket(this.readNodeWSAddress, [], options)
 
             this.ws.onerror = (event) => {
                 this.setConnected(false)
@@ -179,7 +217,6 @@ class TCAbciClient {
             }
             this.ws.onopen = (event) => {
                 this.setConnected(true)
-                this.retrieverCount = 0
                 resolve(event)
             }
             this.ws.onmessage = (message) => {
@@ -192,18 +229,15 @@ class TCAbciClient {
             }
             this.ws.onclose = (event) => {
                 this.setConnected(false)
-                if (event.code !== 1000 && this.retrieverCount <= 10) {
-                    this.retrieverCount++
-                    setTimeout(() => {
-                        this.connect().catch(() => {})
-                    }, 3000)
+                if (this.errorCb) {
+                    this.errorCb(event.error)
                 }
             }
         })
     }
 
     wsClient() {
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && typeof window.WebSocket !== "undefined") {
             return window.WebSocket
         }
         const { WebSocket } = require("ws")
