@@ -19,7 +19,7 @@ class TCAbciClient {
     subscribed = false
     subscribedAddresses = []
     connected = false
-    version = "v1.3.0"
+    version = "v1.3.1"
     errorCb = null
     listenCb = null
     ws = null
