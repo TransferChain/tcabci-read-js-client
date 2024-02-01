@@ -1,3 +1,4 @@
+const ReconnectingWebSocket = require('reconnecting-websocket')
 const {
     NOT_CONNECTED,
     ALREADY_CONNECTED,
@@ -19,7 +20,6 @@ class TCAbciClient {
     subscribedAddresses = []
     connected = false
     version = "v0.1.0"
-    retrieverCount = 0
     errorCb = null
     listenCb = null
     ws = null
@@ -38,7 +38,9 @@ class TCAbciClient {
             headers: {'Client': `tcabaci-read-js-client${this.version}`}
           })
     }
-
+    Socket() {
+        return this.ws
+    }
     SetError(cb) {
         this.errorCb = cb
     }
@@ -162,13 +164,25 @@ class TCAbciClient {
         }
     }
 
+    Reconnect(code = 1000) {
+        if (this.getConnected()) {
+            this.ws.reconnect(code)
+        }
+    }
+
     connect() {
         return new Promise((resolve, reject) => {
             if (this.getConnected()) {
                 reject(ALREADY_CONNECTED)
             }
-            const wsClient = this.wsClient()
-            this.ws = new wsClient(this.readNodeWSAddress)
+
+            const options = {
+                WebSocket:  this.wsClient(),
+                connectionTimeout: 1000,
+                maxRetries: 10,
+            }
+
+            this.ws = new ReconnectingWebSocket(this.readNodeWSAddress, [], options)
 
             this.ws.onerror = (event) => {
                 this.setConnected(false)
@@ -179,7 +193,6 @@ class TCAbciClient {
             }
             this.ws.onopen = (event) => {
                 this.setConnected(true)
-                this.retrieverCount = 0
                 resolve(event)
             }
             this.ws.onmessage = (message) => {
@@ -192,18 +205,15 @@ class TCAbciClient {
             }
             this.ws.onclose = (event) => {
                 this.setConnected(false)
-                if (event.code !== 1000 && this.retrieverCount <= 10) {
-                    this.retrieverCount++
-                    setTimeout(() => {
-                        this.connect().catch(() => {})
-                    }, 3000)
+                if (this.errorCb) {
+                    this.errorCb(event.error)
                 }
             }
         })
     }
 
     wsClient() {
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && typeof window.WebSocket !== "undefined") {
             return window.WebSocket
         }
         const { WebSocket } = require("ws")
