@@ -10,7 +10,6 @@ const {
     TRANSACTION_NOT_BROADCAST
 } = require("./errors")
 const {MESSAGE_TYPE, READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS, TX_TYPE} = require("./constants")
-const Transaction = require("./transaction")
 const Message = require("./message")
 const {toJSON} = require("./util")
 const axios = require("axios")
@@ -19,7 +18,7 @@ class TCAbciClient {
     subscribed = false
     subscribedAddresses = []
     connected = false
-    version = "v1.3.1"
+    version = "v1.3.2"
     errorCb = null
     listenCb = null
     ws = null
