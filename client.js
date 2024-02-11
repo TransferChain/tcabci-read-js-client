@@ -10,7 +10,6 @@ const {
     TRANSACTION_NOT_BROADCAST
 } = require("./errors")
 const {MESSAGE_TYPE, READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS, TX_TYPE} = require("./constants")
-const Transaction = require("./transaction")
 const Message = require("./message")
 const {toJSON} = require("./util")
 const axios = require("axios")
