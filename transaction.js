@@ -1,5 +1,4 @@
 const {INVALID_ARGUMENT_WITH_CS, INVALID_ARGUMENTS} = require("./errors");
-const {MESSAGE_TYPE} = require("./constants");
 
 class Transaction {
     #id

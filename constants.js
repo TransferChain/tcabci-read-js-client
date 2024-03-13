@@ -27,6 +27,7 @@ module.exports = {
         TX_TYPE_RFILE_FS: "fs_rreal",
         TX_TYPE_DFILE_VIRTUAL: "fs_dvirt",
         TX_TYPE_DFILE_FS: "fs_dreal",
+        TX_TYPE_PFILE_VIRTUAL: "fs_pvirt",
         TX_TYPE_REQUEST: "request",
         TX_TYPE_REQUEST_IN: "request_in",
         TX_TYPE_REQUEST_UPLOAD: "request_upload",
@@ -41,5 +42,6 @@ module.exports = {
         TX_TYPE_MULTI_TRANSFER: "multi_transfer",
         TX_TYPE_MULTI_TRANSFER_SENT: "multi_transfer_sent",
         TX_TYPE_MULTI_BACKUP: "multi_backup",
+        TX_TYPE_PASSWD_DATA: 'passwd_data',
     }
 }
