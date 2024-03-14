@@ -18,7 +18,7 @@ class TCAbciClient {
     subscribed = false
     subscribedAddresses = []
     connected = false
-    version = "v1.3.3"
+    version = "v1.3.4"
     errorCb = null
     listenCb = null
     ws = null
@@ -57,18 +57,31 @@ class TCAbciClient {
         this.setConnected(false)
         this.setSubscribed(false)
     }
-    Subscribe(addresses) {
+    Subscribe(addresses = [], txTypes = []) {
         if (!Array.isArray(addresses)) {
             throw INVALID_ARGUMENTS
         }
+
+        if (txTypes && !Array.isArray(addresses)) {
+            throw INVALID_ARGUMENTS
+        }
+
+        if (txTypes.length && txTypes.length > Object.values(TX_TYPE).length) {
+            throw INVALID_ARGUMENTS
+        }
+
         if (!this.getConnected()) {
             throw NOT_CONNECTED
         }
+
         let addrs = []
+
         if (addresses.length === 0) {
             throw ADDRESSES_IS_EMPTY
         }
+
         addrs = addresses
+
         if (this.getSubscribeAddresses().length > 0) {
             let newAddress = []
             for (let i = 0; i < addresses.length; i++) {
@@ -78,7 +91,8 @@ class TCAbciClient {
             }
             addrs = newAddress
         }
-        const message = new Message(true, MESSAGE_TYPE.SUBSCRIBE, addrs)
+
+        const message = new Message(true, MESSAGE_TYPE.SUBSCRIBE, addrs, txTypes)
         this.ws.send(message.ToJSONString())
         this.setSubscribeAddresses(addrs, true)
         this.setSubscribed(true)

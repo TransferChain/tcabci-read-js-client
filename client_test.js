@@ -63,7 +63,7 @@ describe("TCAbciClient TESTS", () => {
         const client = new tcAbciClient()
         client.Start()
             .then(() => {
-                client.Subscribe(["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"])
+                client.Subscribe(["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"], [TX_TYPE.TX_TYPE_STORAGE])
                 const { connected, subscribed } = client.Status()
                 unitJS.assert.equal(connected, true)
                 unitJS.assert.equal(subscribed, true)
@@ -73,6 +73,17 @@ describe("TCAbciClient TESTS", () => {
                 done(err)
             })
     })
+
+  it('should error subscribe with invalid tx type parameter',(done) => {
+    const client = new tcAbciClient()
+    client.Start()
+      .then(() => {
+        client.Subscribe(["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"], ['invalid'])
+      })
+      .catch(() => {
+        done()
+      })
+  })
 
     it('should unsubscribe with valid parameters',(done) => {
         const client = new tcAbciClient()
