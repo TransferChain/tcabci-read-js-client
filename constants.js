@@ -42,6 +42,11 @@ module.exports = {
         TX_TYPE_MULTI_TRANSFER: "multi_transfer",
         TX_TYPE_MULTI_TRANSFER_SENT: "multi_transfer_sent",
         TX_TYPE_MULTI_BACKUP: "multi_backup",
-        TX_TYPE_PASSWD_DATA: 'passwd_data',
+        TX_TYPE_PASSWD_DATA: "passwd_data",
+        TX_TYPE_PASSWD_ROOMF: "passwd_roomF",
+        TX_TYPE_PASSWD_ROOM_POLICY: "passwd_room_policy",
+        TX_TYPE_PASSWD_ROOM_DATA: "passwd_room_data",
+        TX_TYPE_PASSWD_ROOM_DATA_DELETE: "passwd_room_data_delete",
+        TX_TYPE_PASSWD_ROOM_DATA_POLICY: "passwd_room_data_policy",
     }
 }
