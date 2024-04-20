@@ -26,7 +26,12 @@ class TCAbciClient {
     readNodeAddress = READ_NODE_ADDRESS
     readNodeWSAddress = READ_NODE_WS_ADDRESS
 
-    constructor(readNodeAddresses = []) {
+    /**
+     *
+     * @param {Array<String>} readNodeAddresses
+     * @param axiosAdapter Axios Adapter
+     */
+    constructor(readNodeAddresses = [], axiosAdapter = null) {
         if (readNodeAddresses.length === 2) {
             this.readNodeAddress = readNodeAddresses[0]
             this.readNodeWSAddress = readNodeAddresses[1]
@@ -34,7 +39,8 @@ class TCAbciClient {
         this.httpClient = axios.create({
             baseURL: this.readNodeAddress,
             timeout: 10000,
-            headers: {'Client': `tcabaci-read-js-client${this.version}`}
+            headers: {'Client': `tcabaci-read-js-client${this.version}`},
+            ...(axiosAdapter ? { adapter: axiosAdapter } : {})
           })
     }
     Socket() {
