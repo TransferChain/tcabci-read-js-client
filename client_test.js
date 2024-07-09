@@ -79,6 +79,7 @@ describe("TCAbciClient TESTS", () => {
     client.Start()
       .then(() => {
         client.Subscribe(["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"], ['invalid'])
+        done(new Error("invalid"))
       })
       .catch(() => {
         done()
@@ -93,6 +94,8 @@ describe("TCAbciClient TESTS", () => {
                 const { connected, subscribed } = client.Status()
                 unitJS.assert.equal(connected, true)
                 unitJS.assert.equal(subscribed, true)
+
+                return Promise.resolve()
             })
             .then(() => {
                 client.Unsubscribe()
@@ -164,6 +167,8 @@ describe("TCAbciClient TESTS", () => {
                 sender_addr: "",
                 recipient_addr: ""
             })
+
+            done(new Error('invalid'))
         } catch (err) {
             unitJS.assert.equal(TRANSACTION_TYPE_NOT_VALID, err)
             done()
