@@ -1,4 +1,4 @@
-const {INVALID_ARGUMENT_WITH_CS, INVALID_ARGUMENTS} = require("./errors");
+const {INVALID_ARGUMENT_WITH_CS} = require("./errors");
 
 class Transaction {
     #id

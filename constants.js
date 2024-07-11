@@ -38,6 +38,7 @@ module.exports = {
         TX_TYPE_DATA_ROOM_DATA: "data_room_data",
         TX_TYPE_DATA_ROOM_DATA_DELETE: "data_room_data_delete",
         TX_TYPE_DATA_ROOM_DATA_POLICY: "data_room_data_policy",
+        TX_TYPE_MULTI_DATA_ROOM: "multi_data_room",
         TX_TYPE_MULTI_STORAGE: "multi_storage",
         TX_TYPE_MULTI_TRANSFER: "multi_transfer",
         TX_TYPE_MULTI_TRANSFER_SENT: "multi_transfer_sent",
