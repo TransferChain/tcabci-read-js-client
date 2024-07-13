@@ -10,6 +10,8 @@ module.exports = {
         TX_TYPE_MASTER: "initial_storage",
         TX_TYPE_ADDRESS: "interim_storage",
         TX_TYPE_ADDRESSES: "interim_storages",
+        TX_TYPE_ACCOUNT: 'initial_account',
+        TX_TYPE_ACCOUNT_INITIAL_TXS: 'initial_account_txs',
         TX_TYPE_MESSAGE: "message",
         TX_TYPE_MESSAGE_SENT: "inherit_message",
         TX_TYPE_MESSAGE_THREAD_DELETE: "inherit_message_recv",
