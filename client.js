@@ -18,7 +18,7 @@ class TCAbciClient {
     subscribed = false
     subscribedAddresses = []
     connected = false
-    version = "v1.3.11"
+    version = "v1.3.12"
     errorCb = null
     listenCb = null
     ws = null
@@ -126,8 +126,10 @@ class TCAbciClient {
               sender_addrs: senderAddrs,
               typ: typ,
           })
-          .then(res => {
+          .then((res) => {
               return {
+                  first_block_height: res.data.data.first_block_height,
+                  first_transaction: res.data.data.first_transaction,
                   last_block_height: res.data.data.last_block_height,
                   last_transaction: res.data.data.last_transaction,
                   total_count: res.data.total_count,
