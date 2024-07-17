@@ -148,6 +148,8 @@ describe("TCAbciClient TESTS", () => {
       recipientAddrs: ["2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN"],
     })
       .then(data => {
+        unitJS.value(data.first_block_height).isGreaterThan(0)
+        unitJS.value(data.first_transaction).isNotEmpty()
         unitJS.value(data.last_block_height).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
         unitJS.value(data.last_transaction).isNotEmpty()
