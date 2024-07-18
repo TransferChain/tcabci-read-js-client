@@ -1,6 +1,7 @@
 const ReconnectingWebSocket = require('reconnecting-websocket/dist/reconnecting-websocket-cjs')
 const {
     NOT_CONNECTED,
+    ERR_NETWORK,
     ALREADY_CONNECTED,
     INVALID_ARGUMENTS,
     NOT_SUBSCRIBED,
@@ -136,9 +137,11 @@ class TCAbciClient {
               }
           })
           .catch(e => {
-              switch (e.response.status) {
+              switch (e?.response?.status ?? e?.status ?? e?.code) {
                   case 400:
                       throw INVALID_ARGUMENTS
+                  case 'ERR_NETWORK':
+                      throw ERR_NETWORK
                   default:
                       throw e
               }
@@ -164,9 +167,11 @@ class TCAbciClient {
                     }
                 })
                 .catch(e => {
-                    switch (e.response.status) {
+                    switch (e?.response?.status ?? e?.status ?? e?.code) {
                         case 400:
                             throw INVALID_ARGUMENTS
+                        case 'ERR_NETWORK':
+                            throw ERR_NETWORK
                         default:
                             throw e
                     }
