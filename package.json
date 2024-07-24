@@ -34,7 +34,6 @@
     "prettier": "^3.2.4"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2",
     "reconnecting-websocket": "^4.4.0",
     "ws": "^8.18.0"
   }
