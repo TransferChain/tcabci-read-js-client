@@ -15,7 +15,7 @@ $ npm i @tchain/tcabci-read-js-client
 **Subscribe, Listen and Unsubscribe Example**
 
 ```js
-const tcAbciClient = require('@tchain/tcabci-read-js-client')
+import TCAbciClient from '@tchain/tcabci-read-js-client'
 
 const client = new tcAbciClient()
 // OR

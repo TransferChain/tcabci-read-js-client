@@ -1,4 +1,4 @@
-import tcAbciClient from './client.js'
+import TCAbciClient from './client.js'
 import unitJS from 'unit.js'
 import {
   TRANSACTION_NOT_BROADCAST,
@@ -20,7 +20,7 @@ import {
 
 describe('TCAbciClient TESTS', () => {
   it('should start with valid parameters', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Start()
@@ -37,7 +37,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should start with valid parameters and read node addresses', (done) => {
-    const client = new tcAbciClient([READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS])
+    const client = new TCAbciClient([READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS])
 
     client
       .Start()
@@ -54,7 +54,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should reconnect with start and valid parameters', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Start()
@@ -84,7 +84,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should subscribe with valid parameters', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Start()
@@ -107,7 +107,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should error subscribe with invalid tx type parameter', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Start()
@@ -126,7 +126,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should unsubscribe with valid parameters', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Start()
@@ -155,7 +155,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should return last block', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .LastBlock()
@@ -170,7 +170,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should return transaction search result', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .TxSearch({
@@ -194,7 +194,7 @@ describe('TCAbciClient TESTS', () => {
   })
   //
   it('should return transaction summary result', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .TxSummary({
@@ -216,7 +216,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should not broadcast transaction if type is incorrect', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     try {
       client.Broadcast({
@@ -234,7 +234,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should not broadcast transaction', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Broadcast({
@@ -260,7 +260,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should error in bulk tx if addresses count is zero', (done) => {
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Bulk([])
@@ -282,7 +282,7 @@ describe('TCAbciClient TESTS', () => {
       )
     }
 
-    const client = new tcAbciClient()
+    const client = new TCAbciClient()
 
     client
       .Bulk(addresses)
