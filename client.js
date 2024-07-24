@@ -54,7 +54,6 @@ export default class TCAbciClient {
     req.cache = 'no-cache'
     req.headers = {
       Client: `tcabaci-read-js-client${this.version}`,
-      'X-Client': `tcabaci-read-js-client${this.version}`,
     }
 
     if (typeof AbortSignal !== 'undefined') {
