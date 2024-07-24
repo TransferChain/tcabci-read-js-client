@@ -24,7 +24,7 @@ export default class TCAbciClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
-  version = 'v2.0.2'
+  version = 'v2.0.3'
   errorCb = null
   listenCb = null
   ws = null
@@ -67,7 +67,7 @@ export default class TCAbciClient {
       if (response.ok) return response.json()
 
       return Promise.reject(
-        new FetchError(response.statusText, response.status),
+        new FetchError(response.statusText).setCode(response.status),
       )
     })
   }
