@@ -17,12 +17,13 @@ export class FetchError extends Error {
   code = -1
   response = {}
 
-  constructor(props, code = -1) {
-    super(props)
+  constructor(message, code = -1) {
+    super(message)
+    this.message = message
     this.code = code
     this.response = {
       status: code,
-      statusText: Array.isArray(props) ? props[0] : props,
+      statusText: message,
     }
   }
 }
