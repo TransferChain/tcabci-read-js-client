@@ -67,7 +67,7 @@ export default class TCAbciClient {
       if (response.ok) return response.json()
 
       return Promise.reject(
-        new FetchError(response.statusText, response.status),
+        new FetchError(response.statusText).setCode(response.status),
       )
     })
   }

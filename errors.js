@@ -13,17 +13,30 @@ export const ALREADY_CONNECTED = new Error('Already connected'),
   TRANSACTION_NOT_BROADCAST = new Error('Transaction can not be broadcast')
 
 export class FetchError extends Error {
-  message = ''
   code = -1
   response = {}
 
-  constructor(message, code = -1) {
+  /**
+   * @param {string} message
+   */
+  constructor(message) {
     super(message)
-    this.message = message
+    this.name = 'FetchError'
+  }
+
+  setCode(code) {
     this.code = code
+
+    return this
+  }
+
+  setResponse(data) {
     this.response = {
-      status: code,
-      statusText: message,
+      status: this.code,
+      message: this.message,
+      data: data,
     }
+
+    return this
   }
 }
