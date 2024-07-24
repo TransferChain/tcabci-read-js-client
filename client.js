@@ -20,15 +20,6 @@ import {
 import Message from './message.js'
 import { toJSON } from './util.js'
 
-let fetch
-
-if (typeof window !== 'undefined') {
-  fetch = window.fetch
-} else {
-  fetch = (...args) =>
-    import('node-fetch').then(({ default: fetch }) => fetch(...args))
-}
-
 export default class TCAbciClient {
   subscribed = false
   subscribedAddresses = []
