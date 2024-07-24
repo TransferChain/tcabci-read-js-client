@@ -24,7 +24,7 @@ export default class TCAbciClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
-  version = 'v2.0.3'
+  version = 'v2.0.4'
   errorCb = null
   listenCb = null
   ws = null
@@ -54,7 +54,6 @@ export default class TCAbciClient {
     req.cache = 'no-cache'
     req.headers = {
       Client: `tcabaci-read-js-client${this.version}`,
-      'X-Client': `tcabaci-read-js-client${this.version}`,
     }
 
     if (typeof AbortSignal !== 'undefined') {
