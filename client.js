@@ -27,16 +27,20 @@ export default class TCAbciClient {
   version = 'v2.0.4'
   errorCb = null
   listenCb = null
+  wsLibrary = null
   ws = null
   readNodeAddress = READ_NODE_ADDRESS
   readNodeWSAddress = READ_NODE_WS_ADDRESS
 
   /**
-   *
    * @param {Array<String>} readNodeAddresses
+   * @param {WebSocket} wsLibrary
    */
-  constructor(readNodeAddresses = []) {
-    if (readNodeAddresses.length === 2) {
+  constructor(readNodeAddresses = [], wsLibrary) {
+    if (!wsLibrary) throw INVALID_ARGUMENTS
+    this.wsLibrary = wsLibrary
+
+    if (Array.isArray(readNodeAddresses) && readNodeAddresses.length === 2) {
       this.readNodeAddress = readNodeAddresses[0]
       this.readNodeWSAddress = readNodeAddresses[1]
 
@@ -62,13 +66,7 @@ export default class TCAbciClient {
 
     req.priority = 'high'
 
-    return fetch(this.readNodeAddress + uri, req).then((response) => {
-      if (response.ok) return response.json()
-
-      return Promise.reject(
-        new FetchError(response.statusText).setCode(response.status),
-      )
-    })
+    return fetch(this.readNodeAddress + uri, req).then((response) => this.handleResponse(response))
   }
 
   Socket() {
@@ -295,7 +293,7 @@ export default class TCAbciClient {
       }),
     })
       .then((res) => {
-        return { data: res.data.data }
+        return { data: res.data }
       })
       .catch((e) => this.handleRestError(e, { 400: TRANSACTION_NOT_BROADCAST }))
   }
@@ -320,15 +318,13 @@ export default class TCAbciClient {
   }
 
   async connect() {
-    const wsClient = await this.wsClient()
-
     return new Promise((resolve, reject) => {
       if (this.getConnected()) {
         reject(ALREADY_CONNECTED)
       }
 
       const options = {
-        WebSocket: wsClient,
+        WebSocket: this.wsLibrary,
         connectionTimeout: 1000,
         maxRetries: 10,
       }
@@ -363,18 +359,6 @@ export default class TCAbciClient {
     })
   }
 
-  async wsClient() {
-    if (
-      typeof window !== 'undefined' &&
-      typeof window.WebSocket !== 'undefined'
-    ) {
-      return window.WebSocket
-    }
-    const { WebSocket } = await import('ws')
-
-    return WebSocket
-  }
-
   getConnected() {
     return this.connected
   }
@@ -402,6 +386,30 @@ export default class TCAbciClient {
       return
     }
     this.subscribedAddresses = addresses
+  }
+
+  /**
+   * @param {Response} response
+   * @return {Promise<*>}
+   */
+  async handleResponse(response) {
+    if (response.status >= 200 && response.status < 400) {
+      return response.json()
+    }
+
+    let data = await response.text()
+
+    try {
+      data = JSON.parse(data)
+
+      return Promise.reject(
+        new FetchError(data.message).setCode(response.status).setResponse(data)
+      )
+    } catch (e) {
+      return Promise.reject(
+        new FetchError(response.statusText)
+      )
+    }
   }
 
   /**
