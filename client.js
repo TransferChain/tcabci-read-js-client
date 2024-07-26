@@ -66,7 +66,9 @@ export default class TCAbciClient {
 
     req.priority = 'high'
 
-    return fetch(this.readNodeAddress + uri, req).then((response) => this.handleResponse(response))
+    return fetch(this.readNodeAddress + uri, req).then((response) =>
+      this.handleRestResponse(response),
+    )
   }
 
   Socket() {
@@ -228,14 +230,14 @@ export default class TCAbciClient {
       method: 'POST',
       body: JSON.stringify({
         height: `${heightOperator} ${height}`,
-        recipient_addrs: recipientAddrs,
-        sender_addrs: senderAddrs,
-        hashes: hashes,
-        limit,
-        offset,
-        order_field: orderField,
-        order_by: orderBy,
-        ...(types ? { types: types } : { typ: typ }),
+        ...(recipientAddrs ? { recipient_addrs: recipientAddrs } : {}),
+        ...(senderAddrs ? { sender_addrs: senderAddrs } : {}),
+        ...(hashes ? { hashes: hashes } : {}),
+        ...(limit ? { limit: limit } : {}),
+        ...(offset ? { offset: offset } : {}),
+        ...(orderField ? { order_field: orderField } : {}),
+        ...(orderBy ? { order_by: orderBy } : {}),
+        ...(types ? { types: types } : typ ? { typ: typ } : {}),
       }),
     })
       .then((res) => {
@@ -392,7 +394,7 @@ export default class TCAbciClient {
    * @param {Response} response
    * @return {Promise<*>}
    */
-  async handleResponse(response) {
+  async handleRestResponse(response) {
     if (response.status >= 200 && response.status < 400) {
       return response.json()
     }
@@ -403,12 +405,10 @@ export default class TCAbciClient {
       data = JSON.parse(data)
 
       return Promise.reject(
-        new FetchError(data.message).setCode(response.status).setResponse(data)
+        new FetchError(data.message).setCode(response.status).setResponse(data),
       )
     } catch (e) {
-      return Promise.reject(
-        new FetchError(response.statusText)
-      )
+      return Promise.reject(new FetchError(response.statusText))
     }
   }
 

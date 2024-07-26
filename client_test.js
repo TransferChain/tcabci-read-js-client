@@ -183,6 +183,7 @@ describe('TCAbciClient TESTS', () => {
         limit: 1,
         offset: 0,
         orderBy: 'ASC',
+        types: ['storage'],
       })
       .then((data) => {
         unitJS.value(data.txs).hasLength(1)
