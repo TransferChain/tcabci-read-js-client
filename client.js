@@ -66,7 +66,7 @@ export default class TCAbciClient {
 
     req.priority = 'high'
 
-    return fetch(this.readNodeAddress + uri, req).then((response) => this.handleResponse(response))
+    return fetch(this.readNodeAddress + uri, req).then((response) => this.handleRestResponse(response))
   }
 
   Socket() {
@@ -392,7 +392,7 @@ export default class TCAbciClient {
    * @param {Response} response
    * @return {Promise<*>}
    */
-  async handleResponse(response) {
+  async handleRestResponse(response) {
     if (response.status >= 200 && response.status < 400) {
       return response.json()
     }
