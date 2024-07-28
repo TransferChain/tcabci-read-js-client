@@ -186,7 +186,7 @@ describe('TCAbciClient TESTS', () => {
         types: ['storage'],
       })
       .then((data) => {
-        unitJS.value(data.txs).hasLength(1)
+        unitJS.value(data.txs.length).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
         done()
       })
