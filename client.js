@@ -24,7 +24,7 @@ export default class TCAbciClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
-  version = 'v2.1.1'
+  version = 'v2.1.2'
   errorCb = null
   listenCb = null
   wsLibrary = null
@@ -202,6 +202,8 @@ export default class TCAbciClient {
   /**
    * @param {string} heightOperator
    * @param {number} height
+   * @param {?number} maxHeight
+   * @param {?number} lastOrder
    * @param {?Array<string>} recipientAddrs
    * @param {?Array<string>} senderAddrs
    * @param {?Array<string>} hashes
@@ -216,6 +218,8 @@ export default class TCAbciClient {
   TxSearch({
     heightOperator,
     height,
+    maxHeight,
+    lastOrder,
     recipientAddrs,
     senderAddrs,
     hashes,
@@ -230,6 +234,8 @@ export default class TCAbciClient {
       method: 'POST',
       body: JSON.stringify({
         height: `${heightOperator} ${height}`,
+        ...(maxHeight ? { max_height: maxHeight } : {}),
+        ...(lastOrder ? { last_order: lastOrder } : {}),
         ...(recipientAddrs ? { recipient_addrs: recipientAddrs } : {}),
         ...(senderAddrs ? { sender_addrs: senderAddrs } : {}),
         ...(hashes ? { hashes: hashes } : {}),
@@ -300,10 +306,19 @@ export default class TCAbciClient {
       .catch((e) => this.handleRestError(e, { 400: TRANSACTION_NOT_BROADCAST }))
   }
 
-  Bulk(addresses = []) {
+  /**
+   * @param {Array<string>} addresses
+   * @param {?number} maxHeight
+   * @return {Promise<*>}
+   * @constructor
+   */
+  Bulk(addresses = [], maxHeight = null) {
     return this.httpClient('/v1/bulk_tx', {
       method: 'POST',
-      body: JSON.stringify({ addresses: addresses }),
+      body: JSON.stringify({
+        addresses: addresses,
+        ...(maxHeight ? { max_height: maxHeight } : {}),
+      }),
     })
   }
 
