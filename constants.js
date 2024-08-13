@@ -44,6 +44,7 @@ export const MESSAGE_TYPE = {
     TX_TYPE_MULTI_TRANSFER: 'multi_transfer',
     TX_TYPE_MULTI_TRANSFER_SENT: 'multi_transfer_sent',
     TX_TYPE_MULTI_BACKUP: 'multi_backup',
+    TX_TYPE_MULTI_PASSWD: 'multi_passwd',
     TX_TYPE_PASSWD_DATA: 'passwd_data',
     TX_TYPE_PASSWD_ROOM: 'passwd_room',
     TX_TYPE_PASSWD_ROOMF: 'passwd_roomF',
