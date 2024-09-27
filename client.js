@@ -24,7 +24,7 @@ export default class TCAbciClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
-  version = 'v2.1.3'
+  version = 'v2.1.4'
   errorCb = null
   listenCb = null
   wsLibrary = null
@@ -350,10 +350,9 @@ export default class TCAbciClient {
 
       this.ws.onerror = (event) => {
         this.setConnected(false)
-        if (this.errorCb) {
-          this.errorCb(event.error)
-        }
-        reject(event.error)
+        if (this.errorCb) this.errorCb(event.error ?? event)
+
+        reject(event.error ?? event)
       }
       this.ws.onopen = (event) => {
         this.setConnected(true)
@@ -363,15 +362,15 @@ export default class TCAbciClient {
         if (message.data === 'OK' && message.data.length < 10) {
           return { status: message.data }
         }
-        if (this.listenCb) {
-          this.listenCb(toJSON(message.data))
-        }
+
+        if (this.listenCb) this.listenCb(toJSON(message.data))
       }
       this.ws.onclose = (event) => {
         this.setConnected(false)
-        if (this.errorCb) {
-          this.errorCb(event.error)
-        }
+
+        if (this.errorCb) this.errorCb(event.error ?? event)
+
+        reject(event.error ?? event)
       }
     })
   }
