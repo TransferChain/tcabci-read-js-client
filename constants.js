@@ -18,6 +18,7 @@ export const MESSAGE_TYPE = {
     TX_TYPE_TRANSFER_CANCEL: 'transfer_Cancel',
     TX_TYPE_TRANSFER_SENT: 'transfer_sent',
     TX_TYPE_TRANSFER_RECEIVE_DELETE: 'transfer_receive_delete',
+    TX_TYPE_TRANSFER_INFO: 'transfer_info',
     TX_TYPE_STORAGE: 'storage',
     TX_TYPE_STORAGE_DELETE: 'storage_delete',
     TX_TYPE_BACKUP: 'backup',

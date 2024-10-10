@@ -24,7 +24,7 @@ export default class TCAbciClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
-  version = 'v2.1.4'
+  version = 'v2.1.5'
   errorCb = null
   listenCb = null
   wsLibrary = null
