@@ -20,12 +20,47 @@ import {
 import Message from './message.js'
 import { toJSON } from './util.js'
 
-export default class TCAbciClient {
+
+/**
+ * @callback successCallback
+ * @param {Event} event
+ * @return void
+ */
+/**
+ * @callback errorCallback
+ * @param {Event} event
+ * @return void
+ */
+/**
+ * @callback closeCallback
+ * @param {Event} event
+ * @return void
+ */
+/**
+ * @callback listenCallback
+ * @param {*} message
+ * @return void
+ */
+export default class TCaBCIClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
   version = 'v2.1.5'
+  /**
+   * @type {?successCallback}
+   */
+  successCb = null
+  /**
+   * @type {?errorCallback}
+   */
   errorCb = null
+  /**
+   * @type {?closeCallback}
+   */
+  closeCb = null
+  /**
+   * @type {?listenCallback}
+   */
   listenCb = null
   wsLibrary = null
   ws = null
@@ -75,12 +110,44 @@ export default class TCAbciClient {
     return this.ws
   }
 
-  SetErrorCallback(cb) {
-    this.errorCb = cb
+  /**
+   * @param {successCallback} cb
+   * @constructor
+   */
+  SetSuccessCallback(cb) {
+    this.successCb = cb
+
+    return this
   }
 
+  /**
+   * @param {errorCallback} cb
+   * @constructor
+   */
+  SetErrorCallback(cb) {
+    this.errorCb = cb
+
+    return this
+  }
+
+  /**
+   * @param {closeCallback} cb
+   * @constructor
+   */
+  SetCloseCallback(cb) {
+    this.closeCb = cb
+
+    return this
+  }
+
+  /**
+   * @param {listenCallback} cb
+   * @constructor
+   */
   SetListenCallback(cb) {
     this.listenCb = cb
+
+    return this
   }
 
   async Start() {
@@ -94,6 +161,8 @@ export default class TCAbciClient {
     this.Disconnect(1000)
     this.setConnected(false)
     this.setSubscribed(false)
+
+    return this
   }
 
   Subscribe(addresses = [], txTypes = []) {
@@ -332,30 +401,55 @@ export default class TCAbciClient {
     if (this.getConnected()) {
       this.ws.reconnect(code)
     }
+
+    return this
   }
 
+  callSuccessCallback(event) {
+    if (this.successCb) this.successCb(event)
+  }
+
+  callErrorCallback(event) {
+    if (this.errorCb) this.errorCb(event)
+  }
+
+  callCloseCallback(event) {
+    if (this.closeCb) this.closeCb(event)
+  }
+
+  callListenCallback(message) {
+    if (this.listenCb) this.listenCb(message)
+  }
+
+
+  /**
+   * @return {Promise<Event>}
+   */
   async connect() {
+    if (this.getConnected()) {
+      return Promise.reject(ALREADY_CONNECTED)
+    }
+
+    const options = {
+      WebSocket: this.wsLibrary,
+      connectionTimeout: 1000,
+      maxRetries: 10,
+    }
+
+    this.ws = new ReconnectingWebSocket(this.readNodeWSAddress, [], options)
+
     return new Promise((resolve, reject) => {
-      if (this.getConnected()) {
-        reject(ALREADY_CONNECTED)
-      }
-
-      const options = {
-        WebSocket: this.wsLibrary,
-        connectionTimeout: 1000,
-        maxRetries: 10,
-      }
-
-      this.ws = new ReconnectingWebSocket(this.readNodeWSAddress, [], options)
-
       this.ws.onerror = (event) => {
         this.setConnected(false)
-        if (this.errorCb) this.errorCb(event.error ?? event)
+        this.setSubscribed(false)
+        this.callErrorCallback(event)
 
-        reject(event.error ?? event)
+        reject(event)
       }
       this.ws.onopen = (event) => {
         this.setConnected(true)
+        this.callSuccessCallback(event)
+
         resolve(event)
       }
       this.ws.onmessage = (message) => {
@@ -363,14 +457,14 @@ export default class TCAbciClient {
           return { status: message.data }
         }
 
-        if (this.listenCb) this.listenCb(toJSON(message.data))
+        this.callListenCallback(toJSON(message.data))
       }
       this.ws.onclose = (event) => {
         this.setConnected(false)
+        this.setSubscribed(false)
+        this.callCloseCallback(event)
 
-        if (this.errorCb) this.errorCb(event.error ?? event)
-
-        reject(event.error ?? event)
+        resolve(event)
       }
     })
   }
