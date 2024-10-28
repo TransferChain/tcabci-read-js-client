@@ -1,4 +1,4 @@
-import TCAbciClient from './client.js'
+import TCaBCIClient from './client.js'
 import { WebSocket } from 'ws'
 import unitJS from 'unit.js'
 import {
@@ -19,9 +19,9 @@ import {
 //
 // const { randomString } = require('./util')
 
-describe('TCAbciClient TESTS', () => {
-  it('should start with valid parameters', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+describe('TCaBCIClient', () => {
+  it('start with valid parameters', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .Start()
@@ -37,8 +37,8 @@ describe('TCAbciClient TESTS', () => {
       })
   })
 
-  it('should start with valid parameters and read node addresses', (done) => {
-    const client = new TCAbciClient([READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS], WebSocket)
+  it('start with valid parameters and read node addresses', (done) => {
+    const client = new TCaBCIClient([READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS], WebSocket)
 
     client
       .Start()
@@ -54,8 +54,8 @@ describe('TCAbciClient TESTS', () => {
       })
   })
 
-  it('should reconnect with start and valid parameters', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('reconnect with start and valid parameters', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .Start()
@@ -71,21 +71,21 @@ describe('TCAbciClient TESTS', () => {
         unitJS.assert.equal(c2, false)
         unitJS.assert.equal(b2, false)
 
-        setTimeout(() => {
+        setTimeout((client, done) => {
           const { connected, subscribed } = client.Status()
 
           unitJS.assert.equal(connected, true)
           unitJS.assert.equal(subscribed, false)
           done()
-        }, 3100)
+        }, 3100, client, done)
       })
       .catch((err) => {
         done(err)
       })
   })
 
-  it('should subscribe with valid parameters', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('subscribe with valid parameters', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .Start()
@@ -96,10 +96,12 @@ describe('TCAbciClient TESTS', () => {
           ],
           [TX_TYPE.TX_TYPE_STORAGE],
         )
+
         const { connected, subscribed } = client.Status()
 
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, true)
+
         done()
       })
       .catch((err) => {
@@ -108,7 +110,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should error subscribe with invalid tx type parameter', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .Start()
@@ -126,8 +128,8 @@ describe('TCAbciClient TESTS', () => {
       })
   })
 
-  it('should unsubscribe with valid parameters', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('unsubscribe with valid parameters', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .Start()
@@ -155,8 +157,8 @@ describe('TCAbciClient TESTS', () => {
       })
   })
 
-  it('should return last block', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('last block', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .LastBlock()
@@ -170,8 +172,8 @@ describe('TCAbciClient TESTS', () => {
       })
   })
 
-  it('should return transaction search result', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('transaction search result', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .TxSearch({
@@ -194,8 +196,8 @@ describe('TCAbciClient TESTS', () => {
       })
   })
   //
-  it('should return transaction summary result', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('transaction summary result', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .TxSummary({
@@ -209,6 +211,7 @@ describe('TCAbciClient TESTS', () => {
         unitJS.value(data.last_block_height).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
         unitJS.value(data.last_transaction).isNotEmpty()
+
         done()
       })
       .catch((err) => {
@@ -216,8 +219,8 @@ describe('TCAbciClient TESTS', () => {
       })
   })
 
-  it('should not broadcast transaction if type is incorrect', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('should error not broadcast transaction if type is incorrect', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     try {
       client.Broadcast({
@@ -234,8 +237,8 @@ describe('TCAbciClient TESTS', () => {
     }
   })
 
-  it('should not broadcast transaction', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+  it('should error not broadcast transaction', (done) => {
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .Broadcast({
@@ -261,7 +264,7 @@ describe('TCAbciClient TESTS', () => {
   })
 
   it('should error in bulk tx if addresses count is zero', (done) => {
-    const client = new TCAbciClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket)
 
     client
       .Bulk([])
@@ -277,13 +280,13 @@ describe('TCAbciClient TESTS', () => {
   it('should error in bulk tx if addresses count is greater than 251', (done) => {
     const addresses = []
 
-    for (let i = 0; i < 252; i++) {
+    for (let i = 0; i < 51; i++) {
       addresses.push(
         '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
       )
     }
 
-    const client = new TCAbciClient(null, WebSocket)
+    const client = new TCaBCIClient(null, WebSocket)
 
     client
       .Bulk(addresses)
