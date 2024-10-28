@@ -15,11 +15,11 @@ $ npm i @tchain/tcabci-read-js-client
 **Subscribe, Listen and Unsubscribe Example**
 
 ```js
-import TCAbciClient from '@tchain/tcabci-read-js-client'
+import TCaBCIClient from '@tchain/tcabci-read-js-client'
 
-const client = new tcAbciClient()
+const client = new TCaBCIClient()
 // OR
-const client = new tcAbciClient([
+const client = new TCaBCIClient([
   'https://read-node-01.transferchain.io',
   'wss://read-node-01.transferchain.io/ws',
 ])
@@ -30,6 +30,14 @@ client.Subscribe(['<your-public-address-one>', '<your-public-address-two>'])
 
 client.SetListenCallback(() => {
   // If a transaction has been sent to your addresses, the callback you set here will be called.
+})
+
+client.SetErrorCallback(() => {
+  // If network errors will be called.
+})
+
+client.SetCloseCallback(() => {
+  // If server side close will be called.
 })
 
 client.Unsubscribe()
