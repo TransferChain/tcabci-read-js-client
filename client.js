@@ -442,6 +442,7 @@ export default class TCaBCIClient {
       this.ws.onerror = (event) => {
         this.setConnected(false)
         this.setSubscribed(false)
+        this.setSubscribeAddresses([], false)
         this.callErrorCallback(event)
 
         reject(event)
@@ -462,6 +463,7 @@ export default class TCaBCIClient {
       this.ws.onclose = (event) => {
         this.setConnected(false)
         this.setSubscribed(false)
+        this.setSubscribeAddresses([], false)
         this.callCloseCallback(event)
 
         resolve(event)
