@@ -45,7 +45,7 @@ export default class TCaBCIClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
-  version = 'v2.1.5'
+  version = 'v2.2.0'
   /**
    * @type {?successCallback}
    */
