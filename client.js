@@ -236,6 +236,18 @@ export default class TCaBCIClient {
       .catch((e) => this.handleRestError(e, BLOCK_NOT_FOUND))
   }
 
+  Tx(id) {
+    if (!id || typeof id !== 'string') {
+      return Promise.reject(INVALID_ARGUMENTS)
+    }
+
+    return this.httpClient(`/v1/tx/${id}`, { method: 'GET' })
+      .then((res) => {
+        return { tx: res.data }
+      })
+      .catch((e) => this.handleRestError(e))
+  }
+
   /**
    * @param {?Array<string>} recipientAddrs
    * @param {?Array<string>} senderAddrs
