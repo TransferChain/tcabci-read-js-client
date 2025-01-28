@@ -45,7 +45,7 @@ export default class TCaBCIClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
-  version = 'v2.2.2'
+  version = 'v2.2.3'
   /**
    * @type {?successCallback}
    */
@@ -234,6 +234,18 @@ export default class TCaBCIClient {
         return { blocks: res.data, total_count: res.total_count }
       })
       .catch((e) => this.handleRestError(e, BLOCK_NOT_FOUND))
+  }
+
+  Tx(id) {
+    if (!id || typeof id !== 'string') {
+      return Promise.reject(INVALID_ARGUMENTS)
+    }
+
+    return this.httpClient(`/v1/tx/${id}`, { method: 'GET' })
+      .then((res) => {
+        return { tx: res.data }
+      })
+      .catch((e) => this.handleRestError(e))
   }
 
   /**
