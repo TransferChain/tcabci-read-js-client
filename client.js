@@ -20,7 +20,6 @@ import {
 import Message from './message.js'
 import { toJSON } from './util.js'
 
-
 /**
  * @callback successCallback
  * @param {Event} event
@@ -45,6 +44,8 @@ export default class TCaBCIClient {
   subscribed = false
   subscribedAddresses = []
   connected = false
+  chainName = 'transferchain'
+  chainVersion = 'v1'
   version = 'v2.2.4'
   /**
    * @type {?successCallback}
@@ -70,8 +71,15 @@ export default class TCaBCIClient {
   /**
    * @param {Array<String>} readNodeAddresses
    * @param {WebSocket} wsLibrary
+   * @param {?string} chainName
+   * @param {?string} chainVersion
    */
-  constructor(readNodeAddresses = [], wsLibrary) {
+  constructor(
+    readNodeAddresses = [],
+    wsLibrary,
+    chainName = null,
+    chainVersion = null,
+  ) {
     if (!wsLibrary) throw INVALID_ARGUMENTS
     this.wsLibrary = wsLibrary
 
@@ -82,6 +90,9 @@ export default class TCaBCIClient {
       if (!readNodeAddresses[0].startsWith('http')) throw INVALID_ARGUMENTS
       if (!readNodeAddresses[1].startsWith('ws')) throw INVALID_ARGUMENTS
     }
+
+    if (chainName) this.chainName = chainName
+    if (chainVersion) this.chainVersion = chainVersion
   }
 
   /**
@@ -224,12 +235,17 @@ export default class TCaBCIClient {
   }
 
   /**
+   * @param {?string} chainName
+   * @param {?string} chainVersion
    * @return {Promise<any>}
    */
-  LastBlock() {
-    return this.httpClient('/v1/blocks?limit=1&offset=0', {
-      method: 'GET',
-    })
+  LastBlock(chainName = null, chainVersion = null) {
+    return this.httpClient(
+      `/v1/blocks?chain_name=${chainName ?? this.chainName}&chain_version=${chainVersion ?? this.chainVersion}&limit=1&offset=0`,
+      {
+        method: 'GET',
+      },
+    )
       .then((res) => {
         return { blocks: res.data, total_count: res.total_count }
       })
@@ -252,10 +268,19 @@ export default class TCaBCIClient {
    * @param {?Array<string>} recipientAddrs
    * @param {?Array<string>} senderAddrs
    * @param {?string} typ
-   * @param {?Array<string>}
+   * @param {?Array<string>} types
+   * @param {?string} chainName
+   * @param {?string} chainVersion
    * @return {Promise<any>}
    */
-  TxSummary({ recipientAddrs, senderAddrs, typ, types }) {
+  TxSummary({
+    recipientAddrs,
+    senderAddrs,
+    typ,
+    types = null,
+    chainName = null,
+    chainVersion = null,
+  }) {
     if (!recipientAddrs && !senderAddrs) {
       return Promise.reject(INVALID_ARGUMENTS)
     }
@@ -263,6 +288,8 @@ export default class TCaBCIClient {
     return this.httpClient('/v1/tx_summary', {
       method: 'POST',
       body: JSON.stringify({
+        chain_name: chainName ?? this.chainName,
+        chain_version: chainVersion ?? this.chainVersion,
         recipient_addrs: recipientAddrs,
         sender_addrs: senderAddrs,
         ...(types ? { types: types } : { typ: typ }),
@@ -270,6 +297,8 @@ export default class TCaBCIClient {
     })
       .then((res) => {
         return {
+          chain_name: res.data.chain_name,
+          chain_version: res.data.chain_version,
           first_block_height: res.data.first_block_height,
           first_transaction: res.data.first_transaction,
           last_block_height: res.data.last_block_height,
@@ -294,6 +323,8 @@ export default class TCaBCIClient {
    * @param {number} offset
    * @param {string} orderField
    * @param {string} orderBy
+   * @param {?string} chainName
+   * @param {?string} chainVersion
    * @return {Promise<any>}
    */
   TxSearch({
@@ -310,10 +341,14 @@ export default class TCaBCIClient {
     offset,
     orderField,
     orderBy,
+    chainName = null,
+    chainVersion = null,
   }) {
     return this.httpClient('/v1/tx_search/p', {
       method: 'POST',
       body: JSON.stringify({
+        chain_name: chainName ?? this.chainName,
+        chain_version: chainVersion ?? this.chainVersion,
         height: `${heightOperator} ${height}`,
         ...(maxHeight ? { max_height: maxHeight } : {}),
         ...(lastOrder ? { last_order: lastOrder } : {}),
@@ -338,9 +373,85 @@ export default class TCaBCIClient {
 
   Status() {
     return {
+      chain_name: this.chainName,
+      chain_version: this.chainVersion,
       connected: this.connected,
       subscribed: this.subscribed,
     }
+  }
+
+  /**
+   * @param {string} id
+   * @param {number} version
+   * @param {string} type
+   * @param {string} data
+   * @param {string} sender_addr
+   * @param {string} recipient_addr
+   * @param {string} sign
+   * @param {number} fee
+   * @return {Promise<any>}
+   */
+  BroadcastCommit({
+    id,
+    version,
+    type,
+    data,
+    sender_addr,
+    recipient_addr,
+    sign,
+    fee,
+  }) {
+    return this.broadcast(
+      {
+        id,
+        version,
+        type,
+        data,
+        sender_addr,
+        recipient_addr,
+        sign,
+        fee,
+      },
+      false,
+      true,
+    )
+  }
+
+  /**
+   * @param {string} id
+   * @param {number} version
+   * @param {string} type
+   * @param {string} data
+   * @param {string} sender_addr
+   * @param {string} recipient_addr
+   * @param {string} sign
+   * @param {number} fee
+   * @return {Promise<any>}
+   */
+  BroadcastSync({
+    id,
+    version,
+    type,
+    data,
+    sender_addr,
+    recipient_addr,
+    sign,
+    fee,
+  }) {
+    return this.broadcast(
+      {
+        id,
+        version,
+        type,
+        data,
+        sender_addr,
+        recipient_addr,
+        sign,
+        fee,
+      },
+      true,
+      false,
+    )
   }
 
   /**
@@ -364,13 +475,8 @@ export default class TCaBCIClient {
     sign,
     fee,
   }) {
-    if (Object.values(TX_TYPE).indexOf(type) < 0) {
-      throw TRANSACTION_TYPE_NOT_VALID
-    }
-
-    return this.httpClient('/v1/tx', {
-      method: 'POST',
-      body: JSON.stringify({
+    return this.broadcast(
+      {
         id,
         version,
         type,
@@ -379,8 +485,37 @@ export default class TCaBCIClient {
         recipient_addr,
         sign,
         fee,
-      }),
-    })
+      },
+      false,
+      false,
+    )
+  }
+
+  broadcast(
+    { id, version, type, data, sender_addr, recipient_addr, sign, fee },
+    sync = false,
+    commit = false,
+  ) {
+    if (Object.values(TX_TYPE).indexOf(type) < 0) {
+      throw TRANSACTION_TYPE_NOT_VALID
+    }
+
+    return this.httpClient(
+      commit ? '/v1/tx/commit' : sync ? '/v1/tx/sync' : '/v1/tx',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          id,
+          version,
+          type,
+          data,
+          sender_addr,
+          recipient_addr,
+          sign,
+          fee,
+        }),
+      },
+    )
       .then((res) => {
         return { data: res.data }
       })
@@ -390,13 +525,22 @@ export default class TCaBCIClient {
   /**
    * @param {Array<string>} addresses
    * @param {?number} maxHeight
+   * @param {?string} chainName
+   * @param {?string} chainVersion
    * @return {Promise<*>}
    * @constructor
    */
-  Bulk(addresses = [], maxHeight = null) {
+  Bulk(
+    addresses = [],
+    maxHeight = null,
+    chainName = null,
+    chainVersion = null,
+  ) {
     return this.httpClient('/v1/bulk_tx', {
       method: 'POST',
       body: JSON.stringify({
+        chain_name: chainName ?? this.chainName,
+        chain_version: chainVersion ?? this.chainVersion,
         addresses: addresses,
         ...(maxHeight ? { max_height: maxHeight } : {}),
       }),
@@ -432,7 +576,6 @@ export default class TCaBCIClient {
   callListenCallback(message) {
     if (this.listenCb) this.listenCb(message)
   }
-
 
   /**
    * @return {Promise<Event>}

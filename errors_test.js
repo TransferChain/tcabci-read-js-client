@@ -2,7 +2,7 @@ import { FetchError } from './errors.js'
 import unitJS from 'unit.js'
 
 describe('Errors', () => {
-  it('FetchError',  () => {
+  it('FetchError', () => {
     const err = new FetchError('err1').setCode(1)
 
     unitJS.assert.equal(err.message, 'err1')

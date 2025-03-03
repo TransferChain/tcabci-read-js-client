@@ -21,7 +21,7 @@ import {
 
 describe('TCaBCIClient', () => {
   it('start with valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .Start()
@@ -38,7 +38,12 @@ describe('TCaBCIClient', () => {
   })
 
   it('start with valid parameters and read node addresses', (done) => {
-    const client = new TCaBCIClient([READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS], WebSocket)
+    const client = new TCaBCIClient(
+      [READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS],
+      WebSocket,
+      'transferchain',
+      'v1',
+    )
 
     client
       .Start()
@@ -55,7 +60,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('reconnect with start and valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .Start()
@@ -71,13 +76,18 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(c2, false)
         unitJS.assert.equal(b2, false)
 
-        setTimeout((client, done) => {
-          const { connected, subscribed } = client.Status()
+        setTimeout(
+          (client, done) => {
+            const { connected, subscribed } = client.Status()
 
-          unitJS.assert.equal(connected, true)
-          unitJS.assert.equal(subscribed, false)
-          done()
-        }, 3100, client, done)
+            unitJS.assert.equal(connected, true)
+            unitJS.assert.equal(subscribed, false)
+            done()
+          },
+          3100,
+          client,
+          done,
+        )
       })
       .catch((err) => {
         done(err)
@@ -85,7 +95,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('subscribe with valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .Start()
@@ -110,7 +120,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error subscribe with invalid tx type parameter', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .Start()
@@ -129,7 +139,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('unsubscribe with valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .Start()
@@ -158,7 +168,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('last block', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .LastBlock()
@@ -173,7 +183,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('transaction search result', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .TxSearch({
@@ -197,7 +207,7 @@ describe('TCaBCIClient', () => {
   })
   //
   it('transaction summary result', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .TxSummary({
@@ -220,7 +230,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error not broadcast transaction if type is incorrect', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     try {
       client.Broadcast({
@@ -238,7 +248,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error not broadcast transaction', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .Broadcast({
@@ -264,7 +274,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error in bulk tx if addresses count is zero', (done) => {
-    const client = new TCaBCIClient([], WebSocket)
+    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
 
     client
       .Bulk([])
@@ -286,7 +296,7 @@ describe('TCaBCIClient', () => {
       )
     }
 
-    const client = new TCaBCIClient(null, WebSocket)
+    const client = new TCaBCIClient(null, WebSocket, 'transferchain', 'v1')
 
     client
       .Bulk(addresses)
