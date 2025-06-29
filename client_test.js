@@ -242,7 +242,7 @@ describe('TCaBCIClient', () => {
 
       done(new Error('invalid'))
     } catch (err) {
-      unitJS.assert.equal(TRANSACTION_TYPE_NOT_VALID, err)
+      unitJS.assert.equal(TRANSACTION_TYPE_NOT_VALID, err.message)
       done()
     }
   })
@@ -268,7 +268,7 @@ describe('TCaBCIClient', () => {
         done()
       })
       .catch((err) => {
-        unitJS.assert.equal(TRANSACTION_NOT_BROADCAST, err)
+        unitJS.assert.equal(TRANSACTION_NOT_BROADCAST, err.message)
         done()
       })
   })

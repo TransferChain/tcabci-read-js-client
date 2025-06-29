@@ -1,6 +1,6 @@
 import { CHARACTERS } from './constants.js'
 
-export const randomString = (length) => {
+export function randomString(length) {
   let result = ''
 
   const charactersLength = CHARACTERS.length
@@ -15,6 +15,16 @@ export const randomString = (length) => {
   return result
 }
 
-export const toJSON = (data) => {
+export function toJSON(data) {
   return JSON.parse(data)
+}
+
+export function isJSON(str) {
+  try {
+    JSON.parse(str)
+  } catch (e) {
+    return false
+  }
+
+  return true
 }
