@@ -18,7 +18,7 @@ import {
   TX_TYPE,
 } from './constants.js'
 import Message from './message.js'
-import { toJSON } from './util.js'
+import { isJSON, toJSON } from './util.js'
 
 /**
  * @callback successCallback
@@ -43,6 +43,7 @@ import { toJSON } from './util.js'
 export default class TCaBCIClient {
   subscribed = false
   subscribedAddresses = []
+  subscribedSignedData = {}
   connected = false
   chainName = 'transferchain'
   chainVersion = 'v1'
@@ -80,15 +81,17 @@ export default class TCaBCIClient {
     chainName = null,
     chainVersion = null,
   ) {
-    if (!wsLibrary) throw INVALID_ARGUMENTS
+    if (!wsLibrary) throw new Error(INVALID_ARGUMENTS)
     this.wsLibrary = wsLibrary
 
     if (Array.isArray(readNodeAddresses) && readNodeAddresses.length === 2) {
       this.readNodeAddress = readNodeAddresses[0]
       this.readNodeWSAddress = readNodeAddresses[1]
 
-      if (!readNodeAddresses[0].startsWith('http')) throw INVALID_ARGUMENTS
-      if (!readNodeAddresses[1].startsWith('ws')) throw INVALID_ARGUMENTS
+      if (!readNodeAddresses[0].startsWith('http'))
+        throw new Error(INVALID_ARGUMENTS)
+      if (!readNodeAddresses[1].startsWith('ws'))
+        throw new Error(INVALID_ARGUMENTS)
     }
 
     if (chainName) this.chainName = chainName
@@ -165,9 +168,13 @@ export default class TCaBCIClient {
     return this.connect()
   }
 
+  /**
+   * @return {TCaBCIClient}
+   * @throws {Error}
+   */
   Stop() {
     if (!this.getConnected()) {
-      throw NOT_CONNECTED
+      throw new Error(NOT_CONNECTED)
     }
     this.Disconnect(1000)
     this.setConnected(false)
@@ -176,30 +183,42 @@ export default class TCaBCIClient {
     return this
   }
 
-  Subscribe(addresses = [], txTypes = []) {
+  /**
+   * @param {Array<string>} addresses
+   * @param {Object} signedData
+   * @param {?Array<string>} txTypes
+   * @return {TCaBCIClient}
+   */
+  Subscribe(addresses, signedData, txTypes = null) {
     if (!Array.isArray(addresses)) {
-      throw INVALID_ARGUMENTS
+      throw new Error(INVALID_ARGUMENTS)
+    }
+
+    if (typeof signedData !== 'object') {
+      throw new Error(INVALID_ARGUMENTS)
     }
 
     if (txTypes && !Array.isArray(addresses)) {
-      throw INVALID_ARGUMENTS
+      throw new Error(INVALID_ARGUMENTS)
     }
 
-    if (txTypes.length && txTypes.length > Object.values(TX_TYPE).length) {
-      throw INVALID_ARGUMENTS
+    if (txTypes && txTypes.length > Object.values(TX_TYPE).length) {
+      throw new Error(INVALID_ARGUMENTS)
     }
 
     if (!this.getConnected()) {
-      throw NOT_CONNECTED
+      throw new Error(NOT_CONNECTED)
     }
 
-    let addrs = []
+    let addrs = [],
+      sdata = {}
 
     if (addresses.length === 0) {
-      throw ADDRESSES_IS_EMPTY
+      throw new Error(ADDRESSES_IS_EMPTY)
     }
 
     addrs = addresses
+    sdata = signedData
 
     if (this.getSubscribeAddresses().length > 0) {
       let newAddress = []
@@ -212,26 +231,40 @@ export default class TCaBCIClient {
       addrs = newAddress
     }
 
-    const message = new Message(true, MESSAGE_TYPE.SUBSCRIBE, addrs, txTypes)
+    if (this.getSubscribedSignedData().length > 0) {
+      sdata = this.getSubscribedSignedData()
+    }
 
-    this.ws.send(message.ToJSONString())
+    const message = new Message(
+      true,
+      MESSAGE_TYPE.SUBSCRIBE,
+      addrs,
+      sdata,
+      txTypes,
+    )
+
+    this.ws.send(message.ToJSON())
     this.setSubscribeAddresses(addrs, true)
-    this.setSubscribed(true)
+      .setSubscribeSignedData(signedData)
+      .setSubscribed(true)
+
+    return this
   }
 
   Unsubscribe() {
     if (!this.getSubscribed()) {
-      throw NOT_SUBSCRIBED
+      throw new Error(NOT_SUBSCRIBED)
     }
     this.ws.send(
       new Message(
         true,
         MESSAGE_TYPE.UNSUBSCRIBE,
         this.getSubscribeAddresses(),
-      ).ToJSONString(),
+      ).ToJSON(),
     )
     this.setSubscribed(false)
     this.setSubscribeAddresses([])
+    this.setSubscribeSignedData({})
   }
 
   /**
@@ -249,15 +282,23 @@ export default class TCaBCIClient {
       .then((res) => {
         return { blocks: res.data, total_count: res.total_count }
       })
-      .catch((e) => this.handleRestError(e, BLOCK_NOT_FOUND))
+      .catch((e) => this.handleRestError(e, new Error(BLOCK_NOT_FOUND)))
   }
 
-  Tx(id) {
+  /**
+   * @param {string} id
+   * @param {string} signature
+   * @return {Promise<*>}
+   */
+  Tx(id, signature) {
     if (!id || typeof id !== 'string') {
-      return Promise.reject(INVALID_ARGUMENTS)
+      return Promise.reject(new Error(INVALID_ARGUMENTS))
     }
 
-    return this.httpClient(`/v1/tx/${id}`, { method: 'GET' })
+    return this.httpClient(`/v1/tx/${id}`, {
+      method: 'GET',
+      headers: { 'X-Signature': signature },
+    })
       .then((res) => {
         return { tx: res.data }
       })
@@ -267,6 +308,7 @@ export default class TCaBCIClient {
   /**
    * @param {?Array<string>} recipientAddrs
    * @param {?Array<string>} senderAddrs
+   * @param {?Object} signedData
    * @param {?string} typ
    * @param {?Array<string>} types
    * @param {?string} chainName
@@ -276,13 +318,14 @@ export default class TCaBCIClient {
   TxSummary({
     recipientAddrs,
     senderAddrs,
+    signedData,
     typ,
     types = null,
     chainName = null,
     chainVersion = null,
   }) {
     if (!recipientAddrs && !senderAddrs) {
-      return Promise.reject(INVALID_ARGUMENTS)
+      return Promise.reject(new Error(INVALID_ARGUMENTS))
     }
 
     return this.httpClient('/v1/tx_summary', {
@@ -292,6 +335,7 @@ export default class TCaBCIClient {
         chain_version: chainVersion ?? this.chainVersion,
         recipient_addrs: recipientAddrs,
         sender_addrs: senderAddrs,
+        signed_addrs: signedData,
         ...(types ? { types: types } : { typ: typ }),
       }),
     })
@@ -316,6 +360,7 @@ export default class TCaBCIClient {
    * @param {?number} lastOrder
    * @param {?Array<string>} recipientAddrs
    * @param {?Array<string>} senderAddrs
+   * @param {?Object} signedData
    * @param {?Array<string>} hashes
    * @param {string} typ
    * @param {?Array<string>} types
@@ -334,6 +379,7 @@ export default class TCaBCIClient {
     lastOrder,
     recipientAddrs,
     senderAddrs,
+    signedData,
     hashes,
     typ,
     types,
@@ -354,6 +400,7 @@ export default class TCaBCIClient {
         ...(lastOrder ? { last_order: lastOrder } : {}),
         ...(recipientAddrs ? { recipient_addrs: recipientAddrs } : {}),
         ...(senderAddrs ? { sender_addrs: senderAddrs } : {}),
+        ...(signedData ? { signed_addrs: signedData } : {}),
         ...(hashes ? { hashes: hashes } : {}),
         ...(limit ? { limit: limit } : {}),
         ...(offset ? { offset: offset } : {}),
@@ -497,7 +544,7 @@ export default class TCaBCIClient {
     commit = false,
   ) {
     if (Object.values(TX_TYPE).indexOf(type) < 0) {
-      throw TRANSACTION_TYPE_NOT_VALID
+      throw new Error(TRANSACTION_TYPE_NOT_VALID)
     }
 
     return this.httpClient(
@@ -519,11 +566,14 @@ export default class TCaBCIClient {
       .then((res) => {
         return { data: res.data }
       })
-      .catch((e) => this.handleRestError(e, { 400: TRANSACTION_NOT_BROADCAST }))
+      .catch((e) =>
+        this.handleRestError(e, { 400: new Error(TRANSACTION_NOT_BROADCAST) }),
+      )
   }
 
   /**
    * @param {Array<string>} addresses
+   * @param {Object} signedData
    * @param {?number} maxHeight
    * @param {?string} chainName
    * @param {?string} chainVersion
@@ -532,6 +582,7 @@ export default class TCaBCIClient {
    */
   Bulk(
     addresses = [],
+    signedData = {},
     maxHeight = null,
     chainName = null,
     chainVersion = null,
@@ -542,6 +593,7 @@ export default class TCaBCIClient {
         chain_name: chainName ?? this.chainName,
         chain_version: chainVersion ?? this.chainVersion,
         addresses: addresses,
+        signed_addrs: signedData,
         ...(maxHeight ? { max_height: maxHeight } : {}),
       }),
     })
@@ -582,7 +634,7 @@ export default class TCaBCIClient {
    */
   async connect() {
     if (this.getConnected()) {
-      return Promise.reject(ALREADY_CONNECTED)
+      return Promise.reject(new Error(ALREADY_CONNECTED))
     }
 
     const options = {
@@ -598,6 +650,7 @@ export default class TCaBCIClient {
         this.setConnected(false)
         this.setSubscribed(false)
         this.setSubscribeAddresses([], false)
+        this.setSubscribeSignedData({})
         this.callErrorCallback(event)
 
         reject(event)
@@ -613,12 +666,13 @@ export default class TCaBCIClient {
           return { status: message.data }
         }
 
-        this.callListenCallback(toJSON(message.data))
+        this.callListenCallback(!isJSON(message.data) ? message.data : toJSON(message.data))
       }
       this.ws.onclose = (event) => {
         this.setConnected(false)
         this.setSubscribed(false)
         this.setSubscribeAddresses([], false)
+        this.setSubscribeSignedData({})
         this.callCloseCallback(event)
 
         resolve(event)
@@ -646,13 +700,34 @@ export default class TCaBCIClient {
     return this.subscribedAddresses
   }
 
+  getSubscribedSignedData() {
+    return this.subscribedSignedData
+  }
+
+  /**
+   * @param {Array<string>} addresses
+   * @param {?boolean} push
+   * @return {TCaBCIClient}
+   */
   setSubscribeAddresses(addresses, push = false) {
     if (push) {
       this.subscribedAddresses.push(...addresses)
 
-      return
+      return this
     }
     this.subscribedAddresses = addresses
+
+    return this
+  }
+
+  /**
+   * @param {Object} signedData
+   * @return {TCaBCIClient}
+   */
+  setSubscribeSignedData(signedData) {
+    this.subscribedSignedData = signedData
+
+    return this
   }
 
   /**
@@ -680,6 +755,7 @@ export default class TCaBCIClient {
   /**
    * @param {Error} err
    * @param {?Object|Error} custom
+   * @throws Error
    */
   handleRestError(err, custom = null) {
     const code = err.code
@@ -692,9 +768,9 @@ export default class TCaBCIClient {
 
     switch (code) {
       case 400:
-        throw INVALID_ARGUMENTS
+        throw new Error(INVALID_ARGUMENTS)
       case 'ERR_NETWORK':
-        throw ERR_NETWORK
+        throw new Error(ERR_NETWORK)
       default:
         throw err
     }
