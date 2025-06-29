@@ -47,7 +47,7 @@ export default class TCaBCIClient {
   connected = false
   chainName = 'transferchain'
   chainVersion = 'v1'
-  version = 'v2.3.0'
+  version = 'v2.4.0'
   /**
    * @type {?successCallback}
    */
