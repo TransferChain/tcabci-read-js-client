@@ -6,8 +6,7 @@ Read Node WebSocket Address: [wss://read-node-01.transferchain.io/ws](wss://read
 
 ## Networks
 
-- transferchain - v1
-- medusa - v2 (new blocks)
+- medusa - v2
 
 ## Installation
 
