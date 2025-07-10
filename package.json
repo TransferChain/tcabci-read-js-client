@@ -1,6 +1,6 @@
 {
   "name": "@tchain/tcabci-read-js-client",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "TransferChain Fastest Read Network WebSocket Client",
   "main": "client.js",
   "type": "module",
@@ -23,17 +23,18 @@
   },
   "homepage": "https://github.com/TransferChain/tcabci-read-js-client#readme",
   "devDependencies": {
+    "chai": "^5.2.1",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^7.1.0",
-    "express": "^4.21.1",
-    "mocha": "^10.8.2",
+    "express": "^5.1.0",
+    "mocha": "^11.7.1",
     "nyc": "^17.1.0",
-    "prettier": "^3.3.3",
+    "prettier": "^3.6.2",
     "unit.js": "^2.1.1",
-    "ws": "^8.18.0"
+    "ws": "^8.18.3"
   },
   "dependencies": {
     "reconnecting-websocket": "^4.4.0"

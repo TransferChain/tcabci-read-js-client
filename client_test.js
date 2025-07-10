@@ -10,26 +10,30 @@ import {
   READ_NODE_WS_ADDRESS,
   TX_TYPE,
 } from './constants.js'
-//
-// const {
-//   TX_TYPE,
-//   READ_NODE_ADDRESS,
-//   READ_NODE_WS_ADDRESS,
-// } = require('./constants')
-//
-// const { randomString } = require('./util')
+
+const waiter = async (timeout = 1000) => {
+  return new Promise((resolve) => setTimeout(resolve, timeout))
+}
 
 describe('TCaBCIClient', () => {
   it('start with valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .Start()
+      .then(() => {
+        return waiter(500)
+      })
       .then(() => {
         const { connected, subscribed } = client.Status()
 
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, false)
+      })
+      .then(() => {
+        return client.Disconnect()
+      })
+      .then(() => {
         done()
       })
       .catch((err) => {
@@ -41,17 +45,25 @@ describe('TCaBCIClient', () => {
     const client = new TCaBCIClient(
       [READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS],
       WebSocket,
-      'transferchain',
-      'v1',
+      'medusa',
+      'v2',
     )
 
     client
       .Start()
       .then(() => {
+        return waiter(500)
+      })
+      .then(() => {
         const { connected, subscribed } = client.Status()
 
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, false)
+      })
+      .then(() => {
+        return client.Disconnect()
+      })
+      .then(() => {
         done()
       })
       .catch((err) => {
@@ -60,34 +72,49 @@ describe('TCaBCIClient', () => {
   })
 
   it('reconnect with start and valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .Start()
+      .then(() => {
+        return waiter(500)
+      })
       .then(() => {
         const { connected, subscribed } = client.Status()
 
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, false)
 
-        client.Reconnect(1003)
+        return client.Reconnect(1007)
+      })
+      .then(() => {
         const { connected: c2, subscribed: b2 } = client.Status()
-
         unitJS.assert.equal(c2, false)
         unitJS.assert.equal(b2, false)
 
-        setTimeout(
-          (client, done) => {
-            const { connected, subscribed } = client.Status()
+        return waiter(500)
+      })
+      .then(() => {
+        return new Promise((resolve) => {
+          setTimeout(
+            (client, res) => {
+              const { connected, subscribed } = client.Status()
 
-            unitJS.assert.equal(connected, true)
-            unitJS.assert.equal(subscribed, false)
-            done()
-          },
-          3100,
-          client,
-          done,
-        )
+              unitJS.assert.equal(connected, true)
+              unitJS.assert.equal(subscribed, false)
+              res()
+            },
+            3100,
+            client,
+            resolve,
+          )
+        })
+      })
+      .then(() => {
+        return client.Disconnect()
+      })
+      .then(() => {
+        done()
       })
       .catch((err) => {
         done(err)
@@ -95,16 +122,22 @@ describe('TCaBCIClient', () => {
   })
 
   it('subscribe with valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .Start()
+      .then(() => {
+        return waiter(750)
+      })
       .then(() => {
         client.Subscribe(
           [
             '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
           ],
-          [TX_TYPE.TX_TYPE_STORAGE],
+          {
+            '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN':
+              '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
+          },
         )
 
         const { connected, subscribed } = client.Status()
@@ -112,6 +145,9 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, true)
 
+        return client.Disconnect()
+      })
+      .then(() => {
         done()
       })
       .catch((err) => {
@@ -120,17 +156,25 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error subscribe with invalid tx type parameter', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .Start()
       .then(() => {
+        return waiter(500)
+      })
+      .then(() => {
         client.Subscribe(
           [
             '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
+            '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGU',
           ],
           ['invalid'],
         )
+
+        return client.Disconnect()
+      })
+      .then(() => {
         done(new Error('invalid'))
       })
       .catch(() => {
@@ -139,14 +183,23 @@ describe('TCaBCIClient', () => {
   })
 
   it('unsubscribe with valid parameters', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .Start()
       .then(() => {
-        client.Subscribe([
-          '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
-        ])
+        return waiter(500)
+      })
+      .then(() => {
+        client.Subscribe(
+          [
+            '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
+          ],
+          {
+            '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN':
+              '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
+          },
+        )
         const { connected, subscribed } = client.Status()
 
         unitJS.assert.equal(connected, true)
@@ -160,6 +213,10 @@ describe('TCaBCIClient', () => {
 
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, false)
+
+        return client.Disconnect()
+      })
+      .then(() => {
         done()
       })
       .catch((err) => {
@@ -168,7 +225,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('last block', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .LastBlock()
@@ -183,7 +240,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('transaction search result', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .TxSearch({
@@ -207,7 +264,7 @@ describe('TCaBCIClient', () => {
   })
   //
   it('transaction summary result', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .TxSummary({
@@ -230,7 +287,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error not broadcast transaction if type is incorrect', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     try {
       client.Broadcast({
@@ -248,7 +305,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error not broadcast transaction', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .Broadcast({
@@ -274,7 +331,7 @@ describe('TCaBCIClient', () => {
   })
 
   it('should error in bulk tx if addresses count is zero', (done) => {
-    const client = new TCaBCIClient([], WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
       .Bulk([])
@@ -296,7 +353,7 @@ describe('TCaBCIClient', () => {
       )
     }
 
-    const client = new TCaBCIClient(null, WebSocket, 'transferchain', 'v1')
+    const client = new TCaBCIClient(null, WebSocket, 'medusa', 'v2')
 
     client
       .Bulk(addresses)

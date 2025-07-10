@@ -1,4 +1,3 @@
-import ReconnectingWebSocket from 'reconnecting-websocket'
 import {
   ADDRESSES_IS_EMPTY,
   ALREADY_CONNECTED,
@@ -19,6 +18,8 @@ import {
 } from './constants.js'
 import Message from './message.js'
 import { isJSON, toJSON } from './util.js'
+import { DefaultTimeout, Options } from './websocketOptions.js'
+import { TWebSocket } from './websocket.js'
 
 /**
  * @callback successCallback
@@ -41,33 +42,36 @@ import { isJSON, toJSON } from './util.js'
  * @return void
  */
 export default class TCaBCIClient {
-  subscribed = false
-  subscribedAddresses = []
-  subscribedSignedData = {}
-  connected = false
-  chainName = 'transferchain'
-  chainVersion = 'v1'
-  version = 'v2.4.0'
+  _subscribed = false
+  _subscribedAddresses = []
+  _subscribedSignedData = {}
+  _connected = false
+  _chainName = 'transferchain'
+  _chainVersion = 'v1'
+  _version = 'v2.3.0'
   /**
    * @type {?successCallback}
    */
-  successCb = null
+  _successCb = null
   /**
    * @type {?errorCallback}
    */
-  errorCb = null
+  _errorCb = null
   /**
    * @type {?closeCallback}
    */
-  closeCb = null
+  _closeCb = null
   /**
    * @type {?listenCallback}
    */
-  listenCb = null
-  wsLibrary = null
-  ws = null
-  readNodeAddress = READ_NODE_ADDRESS
-  readNodeWSAddress = READ_NODE_WS_ADDRESS
+  _listenCb = null
+  _wsLibrary = null
+  /**
+   * @type {TWebSocket}
+   */
+  _ws
+  _readNodeAddress = READ_NODE_ADDRESS
+  _readNodeWSAddress = READ_NODE_WS_ADDRESS
 
   /**
    * @param {Array<String>} readNodeAddresses
@@ -82,11 +86,11 @@ export default class TCaBCIClient {
     chainVersion = null,
   ) {
     if (!wsLibrary) throw new Error(INVALID_ARGUMENTS)
-    this.wsLibrary = wsLibrary
+    this._wsLibrary = wsLibrary
 
     if (Array.isArray(readNodeAddresses) && readNodeAddresses.length === 2) {
-      this.readNodeAddress = readNodeAddresses[0]
-      this.readNodeWSAddress = readNodeAddresses[1]
+      this._readNodeAddress = readNodeAddresses[0]
+      this._readNodeWSAddress = readNodeAddresses[1]
 
       if (!readNodeAddresses[0].startsWith('http'))
         throw new Error(INVALID_ARGUMENTS)
@@ -94,8 +98,8 @@ export default class TCaBCIClient {
         throw new Error(INVALID_ARGUMENTS)
     }
 
-    if (chainName) this.chainName = chainName
-    if (chainVersion) this.chainVersion = chainVersion
+    if (chainName) this._chainName = chainName
+    if (chainVersion) this._chainVersion = chainVersion
   }
 
   /**
@@ -106,7 +110,7 @@ export default class TCaBCIClient {
   httpClient(uri, req) {
     req.cache = 'no-cache'
     req.headers = {
-      Client: `tcabaci-read-js-client${this.version}`,
+      Client: `tcabaci-read-js-client${this._version}`,
     }
 
     if (typeof AbortSignal !== 'undefined') {
@@ -115,13 +119,13 @@ export default class TCaBCIClient {
 
     req.priority = 'high'
 
-    return fetch(this.readNodeAddress + uri, req).then((response) =>
+    return fetch(this._readNodeAddress + uri, req).then((response) =>
       this.handleRestResponse(response),
     )
   }
 
   Socket() {
-    return this.ws
+    return this._ws
   }
 
   /**
@@ -129,7 +133,7 @@ export default class TCaBCIClient {
    * @constructor
    */
   SetSuccessCallback(cb) {
-    this.successCb = cb
+    this._successCb = cb
 
     return this
   }
@@ -139,7 +143,7 @@ export default class TCaBCIClient {
    * @constructor
    */
   SetErrorCallback(cb) {
-    this.errorCb = cb
+    this._errorCb = cb
 
     return this
   }
@@ -149,7 +153,7 @@ export default class TCaBCIClient {
    * @constructor
    */
   SetCloseCallback(cb) {
-    this.closeCb = cb
+    this._closeCb = cb
 
     return this
   }
@@ -159,7 +163,7 @@ export default class TCaBCIClient {
    * @constructor
    */
   SetListenCallback(cb) {
-    this.listenCb = cb
+    this._listenCb = cb
 
     return this
   }
@@ -169,14 +173,14 @@ export default class TCaBCIClient {
   }
 
   /**
-   * @return {TCaBCIClient}
+   * @return {Awaited<TCaBCIClient>}
    * @throws {Error}
    */
-  Stop() {
+  async Stop() {
     if (!this.getConnected()) {
       throw new Error(NOT_CONNECTED)
     }
-    this.Disconnect(1000)
+    await this.Disconnect(1000)
     this.setConnected(false)
     this.setSubscribed(false)
 
@@ -188,6 +192,7 @@ export default class TCaBCIClient {
    * @param {Object} signedData
    * @param {?Array<string>} txTypes
    * @return {TCaBCIClient}
+   * @throws {Error}
    */
   Subscribe(addresses, signedData, txTypes = null) {
     if (!Array.isArray(addresses)) {
@@ -243,7 +248,7 @@ export default class TCaBCIClient {
       txTypes,
     )
 
-    this.ws.send(message.ToJSON())
+    this._ws.send(message.ToJSON())
     this.setSubscribeAddresses(addrs, true)
       .setSubscribeSignedData(signedData)
       .setSubscribed(true)
@@ -255,7 +260,7 @@ export default class TCaBCIClient {
     if (!this.getSubscribed()) {
       throw new Error(NOT_SUBSCRIBED)
     }
-    this.ws.send(
+    this._ws.send(
       new Message(
         true,
         MESSAGE_TYPE.UNSUBSCRIBE,
@@ -274,7 +279,7 @@ export default class TCaBCIClient {
    */
   LastBlock(chainName = null, chainVersion = null) {
     return this.httpClient(
-      `/v1/blocks?chain_name=${chainName ?? this.chainName}&chain_version=${chainVersion ?? this.chainVersion}&limit=1&offset=0`,
+      `/v1/blocks?chain_name=${chainName ?? this._chainName}&chain_version=${chainVersion ?? this._chainVersion}&limit=1&offset=0`,
       {
         method: 'GET',
       },
@@ -331,8 +336,8 @@ export default class TCaBCIClient {
     return this.httpClient('/v1/tx_summary', {
       method: 'POST',
       body: JSON.stringify({
-        chain_name: chainName ?? this.chainName,
-        chain_version: chainVersion ?? this.chainVersion,
+        chain_name: chainName ?? this._chainName,
+        chain_version: chainVersion ?? this._chainVersion,
         recipient_addrs: recipientAddrs,
         sender_addrs: senderAddrs,
         signed_addrs: signedData,
@@ -393,8 +398,8 @@ export default class TCaBCIClient {
     return this.httpClient('/v1/tx_search/p', {
       method: 'POST',
       body: JSON.stringify({
-        chain_name: chainName ?? this.chainName,
-        chain_version: chainVersion ?? this.chainVersion,
+        chain_name: chainName ?? this._chainName,
+        chain_version: chainVersion ?? this._chainVersion,
         height: `${heightOperator} ${height}`,
         ...(maxHeight ? { max_height: maxHeight } : {}),
         ...(lastOrder ? { last_order: lastOrder } : {}),
@@ -420,10 +425,10 @@ export default class TCaBCIClient {
 
   Status() {
     return {
-      chain_name: this.chainName,
-      chain_version: this.chainVersion,
-      connected: this.connected,
-      subscribed: this.subscribed,
+      chain_name: this._chainName,
+      chain_version: this._chainVersion,
+      connected: this._connected,
+      subscribed: this._subscribed,
     }
   }
 
@@ -590,8 +595,8 @@ export default class TCaBCIClient {
     return this.httpClient('/v1/bulk_tx', {
       method: 'POST',
       body: JSON.stringify({
-        chain_name: chainName ?? this.chainName,
-        chain_version: chainVersion ?? this.chainVersion,
+        chain_name: chainName ?? this._chainName,
+        chain_version: chainVersion ?? this._chainVersion,
         addresses: addresses,
         signed_addrs: signedData,
         ...(maxHeight ? { max_height: maxHeight } : {}),
@@ -599,109 +604,109 @@ export default class TCaBCIClient {
     })
   }
 
-  Disconnect(code = 1000) {
+  async Disconnect(code = 1000) {
     if (this.getConnected()) {
-      this.ws.close(code)
+      await this._ws.disconnect(code)
+
+      this.setConnected(false)
+      this.setSubscribed(false)
     }
   }
 
-  Reconnect(code = 1000) {
+  async Reconnect(code = 1000) {
     if (this.getConnected()) {
-      this.ws.reconnect(code)
+      await this.Disconnect(code)
     }
+
+    await this.connect()
 
     return this
   }
 
   callSuccessCallback(event) {
-    if (this.successCb) this.successCb(event)
+    if (this._successCb) this._successCb(event)
   }
 
   callErrorCallback(event) {
-    if (this.errorCb) this.errorCb(event)
+    if (this._errorCb) this._errorCb(event)
   }
 
   callCloseCallback(event) {
-    if (this.closeCb) this.closeCb(event)
+    if (this._closeCb) this._closeCb(event)
   }
 
   callListenCallback(message) {
-    if (this.listenCb) this.listenCb(message)
+    if (this._listenCb) this._listenCb(message)
   }
 
   /**
-   * @return {Promise<Event>}
+   * @return {Promise<TWebSocket>}
    */
   async connect() {
     if (this.getConnected()) {
       return Promise.reject(new Error(ALREADY_CONNECTED))
     }
 
-    const options = {
-      WebSocket: this.wsLibrary,
-      connectionTimeout: 1000,
-      maxRetries: 10,
-    }
+    const options = new Options(this._readNodeWSAddress)
+    options.setCustomWS(this._wsLibrary)
 
-    this.ws = new ReconnectingWebSocket(this.readNodeWSAddress, [], options)
+    this._ws = new TWebSocket(options)
 
-    return new Promise((resolve, reject) => {
-      this.ws.onerror = (event) => {
-        this.setConnected(false)
-        this.setSubscribed(false)
-        this.setSubscribeAddresses([], false)
-        this.setSubscribeSignedData({})
-        this.callErrorCallback(event)
-
-        reject(event)
-      }
-      this.ws.onopen = (event) => {
-        this.setConnected(true)
-        this.callSuccessCallback(event)
-
-        resolve(event)
-      }
-      this.ws.onmessage = (message) => {
-        if (message.data === 'OK' && message.data.length < 10) {
-          return { status: message.data }
-        }
-
-        this.callListenCallback(!isJSON(message.data) ? message.data : toJSON(message.data))
-      }
-      this.ws.onclose = (event) => {
-        this.setConnected(false)
-        this.setSubscribed(false)
-        this.setSubscribeAddresses([], false)
-        this.setSubscribeSignedData({})
-        this.callCloseCallback(event)
-
-        resolve(event)
-      }
+    this._ws.addErrorListener((e) => {
+      this.setConnected(false)
+      this.setSubscribed(false)
+      this.setSubscribeAddresses([], false)
+      this.setSubscribeSignedData({})
+      this.callErrorCallback(e)
     })
+
+    this._ws.addOpenListener((e) => {
+      this.setConnected(true)
+      this.callSuccessCallback(e)
+    })
+
+    this._ws.addMessageListener((message) => {
+      if (message.data === 'OK' && message.data.length < 10) {
+        return { status: message.data }
+      }
+
+      this.callListenCallback(!isJSON(message.data) ? message.data : toJSON(message.data))
+    })
+
+    this._ws.addCloseListener((e) => {
+      console.log('came gggg ', e)
+      this.setConnected(false)
+      this.setSubscribed(false)
+      this.setSubscribeAddresses([], false)
+      this.setSubscribeSignedData({})
+      this.callCloseCallback(e)
+    })
+
+    return this._ws.connect()
   }
 
   getConnected() {
-    return this.connected
+    return this._connected
   }
 
   setConnected(value) {
-    this.connected = value
+    this._connected = value
   }
 
   getSubscribed() {
-    return this.subscribed
+    return this._subscribed
   }
 
   setSubscribed(value) {
-    this.subscribed = value
+    this._subscribed = value
   }
 
   getSubscribeAddresses() {
-    return this.subscribedAddresses
+    return this._subscribedAddresses
   }
 
   getSubscribedSignedData() {
-    return this.subscribedSignedData
+    return this._subscribedSignedData
   }
 
   /**
@@ -711,11 +716,11 @@ export default class TCaBCIClient {
    */
   setSubscribeAddresses(addresses, push = false) {
     if (push) {
-      this.subscribedAddresses.push(...addresses)
+      this._subscribedAddresses.push(...addresses)
 
       return this
     }
-    this.subscribedAddresses = addresses
+    this._subscribedAddresses = addresses
 
     return this
   }
@@ -725,7 +730,7 @@ export default class TCaBCIClient {
    * @return {TCaBCIClient}
    */
   setSubscribeSignedData(signedData) {
-    this.subscribedSignedData = signedData
+    this._subscribedSignedData = signedData
 
     return this
   }
