@@ -112,11 +112,6 @@ export default class TCaBCIClient {
     req.headers = {
       Client: `tcabaci-read-js-client${this._version}`,
     }
-
-    if (typeof AbortSignal !== 'undefined') {
-      req.signal = AbortSignal.timeout(10000)
-    }
-
     req.priority = 'high'
 
     return fetch(this._readNodeAddress + uri, req).then((response) =>
