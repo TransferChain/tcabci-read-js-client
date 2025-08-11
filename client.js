@@ -48,7 +48,7 @@ export default class TCaBCIClient {
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = 'v2.3.0'
+  _version = 'v2.5.1'
   /**
    * @type {?successCallback}
    */
@@ -112,11 +112,6 @@ export default class TCaBCIClient {
     req.headers = {
       Client: `tcabaci-read-js-client${this._version}`,
     }
-
-    if (typeof AbortSignal !== 'undefined') {
-      req.signal = AbortSignal.timeout(10000)
-    }
-
     req.priority = 'high'
 
     return fetch(this._readNodeAddress + uri, req).then((response) =>
