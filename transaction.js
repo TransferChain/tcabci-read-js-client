@@ -49,6 +49,8 @@ export const TX_TYPE_MASTER = 'initial_storage',
   TX_TYPE_PASSWD_ROOM_DATA_POLICY = 'passwd_room_data_policy',
   TX_TYPE_PASSWD_DATAV2 = 'pwdd',
   TX_TYPE_PASSWD_DATAV2_POLICY = 'pwdd_policy',
+  TX_TYPE_COLLECTION = 'coll',
+  TX_TYPE_COLLECTION_POLICY = 'coll_policy',
   TX_TYPE = {
     TX_TYPE_MASTER: TX_TYPE_MASTER,
     TX_TYPE_ADDRESS: TX_TYPE_ADDRESS,
@@ -99,6 +101,8 @@ export const TX_TYPE_MASTER = 'initial_storage',
     TX_TYPE_PASSWD_ROOM_DATA_POLICY: TX_TYPE_PASSWD_ROOM_DATA_POLICY,
     TX_TYPE_PASSWD_DATAV2: TX_TYPE_PASSWD_DATAV2,
     TX_TYPE_PASSWD_DATAV2_POLICY: TX_TYPE_PASSWD_DATAV2_POLICY,
+    TX_TYPE_COLLECTION: TX_TYPE_COLLECTION,
+    TX_TYPE_COLLECTION_POLICY: TX_TYPE_COLLECTION_POLICY,
   },
   TX_TYPE_LIST = Object.keys(TX_TYPE).map((k) => TX_TYPE[k])
 
@@ -155,6 +159,50 @@ export default class Transaction {
     this._inserted_at = inserted_at
 
     this._validate()
+  }
+
+  get ID() {
+    return this._id
+  }
+
+  get Height() {
+    return this._height
+  }
+
+  get Version() {
+    return this._version
+  }
+
+  get Typ() {
+    return this._typ
+  }
+
+  get SenderAddr() {
+    return this._sender_addr
+  }
+
+  get RecipientAddr() {
+    return this._recipient_addr
+  }
+
+  get Data() {
+    return this._data
+  }
+
+  get Sign() {
+    return this._sign
+  }
+
+  get Fee() {
+    return this._fee
+  }
+
+  get Hash() {
+    return this._hash
+  }
+
+  get InsertedAt() {
+    return this._inserted_at
   }
 
   /**
