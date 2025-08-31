@@ -161,6 +161,50 @@ export default class Transaction {
     this._validate()
   }
 
+  get ID() {
+    return this._id
+  }
+
+  get Height() {
+    return this._height
+  }
+
+  get Version() {
+    return this._version
+  }
+
+  get Typ() {
+    return this._typ
+  }
+
+  get SenderAddr() {
+    return this._sender_addr
+  }
+
+  get RecipientAddr() {
+    return this._recipient_addr
+  }
+
+  get Data() {
+    return this._data
+  }
+
+  get Sign() {
+    return this._sign
+  }
+
+  get Fee() {
+    return this._fee
+  }
+
+  get Hash() {
+    return this._hash
+  }
+
+  get InsertedAt() {
+    return this._inserted_at
+  }
+
   /**
    * @return {string}
    * @throws Error
