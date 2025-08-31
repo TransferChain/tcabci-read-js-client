@@ -18,8 +18,9 @@ import {
 } from './constants.js'
 import Message from './message.js'
 import { isJSON, toJSON } from './util.js'
-import { DefaultTimeout, Options } from './websocketOptions.js'
+import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
+import pkg from './package.json' with { type: 'json' }
 
 /**
  * @callback successCallback
@@ -48,7 +49,7 @@ export default class TCaBCIClient {
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = 'v2.5.1'
+  _version = `v${pkg.version}`
   /**
    * @type {?successCallback}
    */
@@ -110,7 +111,7 @@ export default class TCaBCIClient {
   httpClient(uri, req) {
     req.cache = 'no-cache'
     req.headers = {
-      Client: `tcabaci-read-js-client${this._version}`,
+      Client: `tcabaci-read-js-client-${this._version}`,
     }
     req.priority = 'high'
 
@@ -665,11 +666,12 @@ export default class TCaBCIClient {
         return { status: message.data }
       }
 
-      this.callListenCallback(!isJSON(message.data) ? message.data : toJSON(message.data))
+      this.callListenCallback(
+        !isJSON(message.data) ? message.data : toJSON(message.data),
+      )
     })
 
     this._ws.addCloseListener((e) => {
-      console.log('came gggg ', e)
       this.setConnected(false)
       this.setSubscribed(false)
       this.setSubscribeAddresses([], false)

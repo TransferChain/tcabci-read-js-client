@@ -1,3 +1,5 @@
+import pkg from './package.json' with { type: 'json' }
+
 export const HTTPSPort = 443,
   HTTPPort = 80
 
@@ -13,6 +15,7 @@ export class Options {
   _protocols = []
   _customWS
   _endpoints = ['ws', 'longpoll']
+  _version = `v${pkg.version}`
 
   _maxConnectionDelay = 10000
   _minReconnectionDelay = 1000 + Math.random() * 4000
@@ -272,6 +275,9 @@ export class Options {
       maxEnqueuedMessages: this._maxEnqueuedMessages,
       startClosed: this._startClosed,
       debug: this._debug,
+      headers: {
+        Client: `tcabaci-read-js-client/${this._version}`,
+      },
     }
   }
 }

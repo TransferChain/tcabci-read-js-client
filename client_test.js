@@ -9,6 +9,7 @@ import {
   READ_NODE_ADDRESS,
   READ_NODE_WS_ADDRESS,
   TX_TYPE,
+  TX_TYPE_ADDRESS,
 } from './constants.js'
 
 const waiter = async (timeout = 1000) => {
@@ -311,7 +312,7 @@ describe('TCaBCIClient', () => {
       .Broadcast({
         id: 'dummy id',
         version: 0,
-        type: TX_TYPE.TX_TYPE_ADDRESS,
+        type: TX_TYPE_ADDRESS,
         data: btoa(JSON.stringify({ data: '' })),
         sender_addr:
           '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
