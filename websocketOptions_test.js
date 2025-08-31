@@ -1,6 +1,11 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import { DefaultTimeout, HTTPPort, HTTPSPort, Options } from './websocketOptions.js'
+import {
+  DefaultTimeout,
+  HTTPPort,
+  HTTPSPort,
+  Options,
+} from './websocketOptions.js'
 import WebSocket from 'ws'
 
 describe('Options', () => {
