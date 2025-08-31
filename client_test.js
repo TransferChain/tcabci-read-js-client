@@ -5,12 +5,8 @@ import {
   TRANSACTION_NOT_BROADCAST,
   TRANSACTION_TYPE_NOT_VALID,
 } from './errors.js'
-import {
-  READ_NODE_ADDRESS,
-  READ_NODE_WS_ADDRESS,
-  TX_TYPE,
-  TX_TYPE_ADDRESS,
-} from './constants.js'
+import { READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS } from './constants.js'
+import { TX_TYPE_ADDRESS } from './transaction.js'
 
 const waiter = async (timeout = 1000) => {
   return new Promise((resolve) => setTimeout(resolve, timeout))

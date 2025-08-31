@@ -8,9 +8,6 @@
     "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000",
     "test:all": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000 '*_test.js'",
     "test:coverage": "export NODE_ENV=test || SET \"NODE_ENV=test\" && nyc --reporter=text mocha  --require esm --timeout 5000",
-    "lint": "eslint --ext .js ./",
-    "lint-fix": "eslint --fix --ext .js ./",
-    "lint-fix-file": "eslint --fix --ext .js",
     "format": "prettier --write \"**/*.{js,md,json}\" --ignore-path .gitignore"
   },
   "repository": {
@@ -24,14 +21,11 @@
   },
   "homepage": "https://github.com/TransferChain/tcabci-read-js-client#readme",
   "devDependencies": {
+    "@eslint/js": "^9.34.0",
     "chai": "^6.0.1",
-    "eslint": "^9.34.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^7.2.1",
     "esm": "*",
     "express": "^5.1.0",
+    "globals": "^16.3.0",
     "mocha": "^11.7.1",
     "nyc": "^17.1.0",
     "prettier": "^3.6.2",
