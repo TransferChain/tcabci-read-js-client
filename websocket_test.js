@@ -39,9 +39,7 @@ describe('WebSocket', () => {
       wsTwo = w
       wsTwo.on('error', console.error)
 
-      wsTwo.on('message', function message(data) {
-
-      })
+      wsTwo.on('message', function message(data) {})
     })
 
     setTimeout(() => {
@@ -64,6 +62,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -83,6 +82,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -101,6 +101,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -129,6 +130,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -149,6 +151,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -169,6 +172,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -189,6 +193,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -209,6 +214,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 
@@ -232,6 +238,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let opened = false,
       openCb = () => {
@@ -258,6 +265,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let opened = false,
       openCb = () => {
@@ -279,6 +287,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let opened = false,
       openCb = () => {
@@ -302,6 +311,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = null,
       messageCb = (msg) => {
@@ -331,6 +341,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = false,
       messageCb = () => {
@@ -352,6 +363,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = false,
       messageCb = () => {
@@ -375,6 +387,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = null,
       errorCb = (e) => {
@@ -407,6 +420,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = false,
       errorCb = () => {
@@ -428,6 +442,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = false,
       errorCb = () => {
@@ -451,6 +466,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = null,
       closeCb = (e) => {
@@ -477,6 +493,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = false,
       closeCb = () => {
@@ -498,6 +515,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
+    options.setDebug(true)
 
     let came = false,
       closeCb = (e) => {
@@ -514,7 +532,6 @@ describe('WebSocket', () => {
     expect(twSocket.closeListeners.length).to.be.eq(0)
   })
 
-
   it('should error addOpenListener/1 if exceeded maximum listener size', async () => {
     const options = new Options('localhost', 100, false, 4442)
 
@@ -522,7 +539,7 @@ describe('WebSocket', () => {
     options.setMaxConnectionDelay(100)
     options.setMinReconnectionDelay(100)
     options.setCustomWS(WebSocket)
-
+    options.setDebug(true)
 
     const twSocket = new TWebSocket(options)
 

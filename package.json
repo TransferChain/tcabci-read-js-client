@@ -1,15 +1,13 @@
 {
   "name": "@tchain/tcabci-read-js-client",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "TransferChain Fastest Read Network WebSocket Client",
   "main": "client.js",
   "type": "module",
   "scripts": {
-    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha --timeout 5000",
-    "test:coverage": "export NODE_ENV=test || SET \"NODE_ENV=test\" && nyc --reporter=text mocha --timeout 5000",
-    "lint": "eslint --ext .js ./",
-    "lint-fix": "eslint --fix --ext .js ./",
-    "lint-fix-file": "eslint --fix --ext .js",
+    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000",
+    "test:all": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000 '*_test.js'",
+    "test:coverage": "export NODE_ENV=test || SET \"NODE_ENV=test\" && nyc --reporter=text mocha  --require esm --timeout 5000",
     "format": "prettier --write \"**/*.{js,md,json}\" --ignore-path .gitignore"
   },
   "repository": {
@@ -23,13 +21,11 @@
   },
   "homepage": "https://github.com/TransferChain/tcabci-read-js-client#readme",
   "devDependencies": {
-    "chai": "^5.2.1",
-    "eslint": "^9.15.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^7.1.0",
+    "@eslint/js": "^9.34.0",
+    "chai": "^6.0.1",
+    "esm": "*",
     "express": "^5.1.0",
+    "globals": "^16.3.0",
     "mocha": "^11.7.1",
     "nyc": "^17.1.0",
     "prettier": "^3.6.2",
