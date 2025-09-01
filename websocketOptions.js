@@ -1,5 +1,3 @@
-import pkg from './package.json' with { type: 'json' }
-
 export const HTTPSPort = 443,
   HTTPPort = 80
 
@@ -15,7 +13,7 @@ export class Options {
   _protocols = []
   _customWS
   _endpoints = ['ws', 'longpoll']
-  _version = `v${pkg.version}`
+  _version = `v2.5.4`
 
   _maxConnectionDelay = 10000
   _minReconnectionDelay = 1000 + Math.random() * 4000
