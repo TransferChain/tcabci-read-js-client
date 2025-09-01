@@ -4,6 +4,7 @@ import {
   BLOCK_NOT_FOUND,
   ERR_NETWORK,
   FetchError,
+  INVALID_ARGUMENT_WITH_CS,
   INVALID_ARGUMENTS,
   NOT_CONNECTED,
   NOT_SUBSCRIBED,
@@ -19,7 +20,7 @@ import Message from './message.js'
 import { isJSON, toJSON } from './util.js'
 import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
-import { TX_TYPE_LIST } from './transaction.js'
+import { TX_TYPE, TX_TYPE_LIST } from './transaction.js'
 
 /**
  * @callback successCallback
@@ -48,7 +49,7 @@ export default class TCaBCIClient {
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = `v2.5.4`
+  _version = `v2.5.5`
   /**
    * @type {?successCallback}
    */
@@ -190,32 +191,28 @@ export default class TCaBCIClient {
    * @throws {Error}
    */
   Subscribe(addresses, signedData, txTypes = null) {
-    if (!Array.isArray(addresses)) {
-      throw new Error(INVALID_ARGUMENTS)
+    if (!Array.isArray(addresses) || addresses.length === 0)
+      throw new Error(INVALID_ARGUMENT_WITH_CS('addresses'))
+
+    if (typeof signedData !== 'object') throw new Error(INVALID_ARGUMENTS)
+
+    if (txTypes && Array.isArray(txTypes)) {
+      if (!Array.isArray(txTypes))
+        throw new Error(INVALID_ARGUMENT_WITH_CS('txTypes'))
+
+      if (txTypes.length > TX_TYPE_LIST.length)
+        throw new Error(INVALID_ARGUMENT_WITH_CS('txTypes'))
+
+      for (let i = 0; i < txTypes.length; i++) {
+        if (!TX_TYPE[txTypes[i]])
+          throw new Error(INVALID_ARGUMENT_WITH_CS('txType ', txTypes[i]))
+      }
     }
 
-    if (typeof signedData !== 'object') {
-      throw new Error(INVALID_ARGUMENTS)
-    }
-
-    if (txTypes && !Array.isArray(addresses)) {
-      throw new Error(INVALID_ARGUMENTS)
-    }
-
-    if (txTypes && txTypes.length > TX_TYPE_LIST.length) {
-      throw new Error(INVALID_ARGUMENTS)
-    }
-
-    if (!this.getConnected()) {
-      throw new Error(NOT_CONNECTED)
-    }
+    if (!this.getConnected()) throw new Error(NOT_CONNECTED)
 
     let addrs = [],
       sdata = {}
-
-    if (addresses.length === 0) {
-      throw new Error(ADDRESSES_IS_EMPTY)
-    }
 
     addrs = addresses
     sdata = signedData
@@ -543,7 +540,7 @@ export default class TCaBCIClient {
     sync = false,
     commit = false,
   ) {
-    if (Object.values(TX_TYPE).indexOf(type) < 0) {
+    if (!TX_TYPE_LIST.includes(type)) {
       throw new Error(TRANSACTION_TYPE_NOT_VALID)
     }
 

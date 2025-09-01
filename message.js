@@ -1,5 +1,6 @@
 import { INVALID_ARGUMENTS, INVALID_ARGUMENT_WITH_CS } from './errors.js'
-import { MESSAGE_TYPE, TX_TYPE } from './constants.js'
+import { MESSAGE_TYPE } from './constants.js'
+import { TX_TYPE_LIST } from './transaction.js'
 
 export default class Message {
   _is_web = false
@@ -60,15 +61,11 @@ export default class Message {
     }
 
     if (this._txTypes.length) {
-      let vals = Object.values(TX_TYPE)
-
       for (let i = 0; i < this._txTypes.length; i++) {
-        if (vals.indexOf(this._txTypes[i]) === -1) {
+        if (!TX_TYPE_LIST.includes(this._txTypes[i])) {
           throw new Error(INVALID_ARGUMENT_WITH_CS('tx_types'))
         }
       }
-
-      vals = []
     }
   }
 }
