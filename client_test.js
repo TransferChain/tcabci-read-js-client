@@ -36,6 +36,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         done(err)
       })
+      .finally(() => {
+        client.Stop()
+      })
   })
 
   it('start with valid parameters and read node addresses', (done) => {
@@ -65,6 +68,9 @@ describe('TCaBCIClient', () => {
       })
       .catch((err) => {
         done(err)
+      })
+      .finally(() => {
+        client.Stop()
       })
   })
 
@@ -116,6 +122,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         done(err)
       })
+      .finally(() => {
+        client.Stop()
+      })
   })
 
   it('subscribe with valid parameters', (done) => {
@@ -150,6 +159,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         done(err)
       })
+      .finally(() => {
+        client.Stop()
+      })
   })
 
   it('should error subscribe with invalid tx type parameter', (done) => {
@@ -166,6 +178,7 @@ describe('TCaBCIClient', () => {
             '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
             '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGU',
           ],
+          {},
           ['invalid'],
         )
 
@@ -176,6 +189,9 @@ describe('TCaBCIClient', () => {
       })
       .catch(() => {
         done()
+      })
+      .finally(() => {
+        client.Stop()
       })
   })
 
@@ -219,6 +235,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         done(err)
       })
+      .finally(() => {
+        client.Stop()
+      })
   })
 
   it('last block', (done) => {
@@ -226,13 +245,16 @@ describe('TCaBCIClient', () => {
 
     client
       .LastBlock()
-      .then((data) => {
-        unitJS.value(data.blocks).hasLength(1)
-        unitJS.value(data.total_count).isGreaterThan(1)
+      .then(({ blocks, total_count }) => {
+        unitJS.array(blocks).hasLength(1)
+        unitJS.assert.equal(total_count, 1)
         done()
       })
       .catch((err) => {
         done(err)
+      })
+      .finally(() => {
+        client.Stop()
       })
   })
 
@@ -258,6 +280,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         done(err)
       })
+      .finally(() => {
+        client.Stop()
+      })
   })
   //
   it('transaction summary result', (done) => {
@@ -281,6 +306,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         done(err)
       })
+      .finally(() => {
+        client.Stop()
+      })
   })
 
   it('should error not broadcast transaction if type is incorrect', (done) => {
@@ -299,6 +327,8 @@ describe('TCaBCIClient', () => {
       unitJS.assert.equal(TRANSACTION_TYPE_NOT_VALID, err.message)
       done()
     }
+
+    client.Stop()
   })
 
   it('should error not broadcast transaction', (done) => {
@@ -325,6 +355,9 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(TRANSACTION_NOT_BROADCAST, err.message)
         done()
       })
+      .finally(() => {
+        client.Stop()
+      })
   })
 
   it('should error in bulk tx if addresses count is zero', (done) => {
@@ -338,6 +371,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
         done()
+      })
+      .finally(() => {
+        client.Stop()
       })
   })
 
@@ -360,6 +396,9 @@ describe('TCaBCIClient', () => {
       .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
         done()
+      })
+      .finally(() => {
+        client.Stop()
       })
   })
 })
