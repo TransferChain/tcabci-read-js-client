@@ -1,9 +1,8 @@
 import {
-  ADDRESSES_IS_EMPTY,
+  FetchError,
   ALREADY_CONNECTED,
   BLOCK_NOT_FOUND,
   ERR_NETWORK,
-  FetchError,
   INVALID_ARGUMENT_WITH_CS,
   INVALID_ARGUMENTS,
   NOT_CONNECTED,
@@ -21,6 +20,7 @@ import { isJSON, toJSON } from './util.js'
 import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
 import { TX_TYPE, TX_TYPE_LIST } from './transaction.js'
+let https
 
 /**
  * @callback successCallback
@@ -49,7 +49,7 @@ export default class TCaBCIClient {
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = `v2.5.5`
+  _version = `v2.5.6`
   /**
    * @type {?successCallback}
    */
@@ -67,6 +67,11 @@ export default class TCaBCIClient {
    */
   _listenCb = null
   _wsLibrary = null
+  /**
+   * @type {Options}
+   * @private
+   */
+  _options
   /**
    * @type {TWebSocket}
    */
@@ -90,14 +95,17 @@ export default class TCaBCIClient {
     this._wsLibrary = wsLibrary
 
     if (Array.isArray(readNodeAddresses) && readNodeAddresses.length === 2) {
-      this._readNodeAddress = readNodeAddresses[0]
-      this._readNodeWSAddress = readNodeAddresses[1]
-
       if (!readNodeAddresses[0].startsWith('http'))
         throw new Error(INVALID_ARGUMENTS)
       if (!readNodeAddresses[1].startsWith('ws'))
         throw new Error(INVALID_ARGUMENTS)
+
+      this._readNodeAddress = readNodeAddresses[0]
+      this._readNodeWSAddress = readNodeAddresses[1]
     }
+
+    this._options = new Options(this._readNodeWSAddress)
+    this._options.setCustomWS(this._wsLibrary)
 
     if (chainName) this._chainName = chainName
     if (chainVersion) this._chainVersion = chainVersion
@@ -118,6 +126,10 @@ export default class TCaBCIClient {
     return fetch(this._readNodeAddress + uri, req).then((response) =>
       this.handleRestResponse(response),
     )
+  }
+
+  SetDebug(debug) {
+    this._options.setDebug(debug)
   }
 
   Socket() {
@@ -639,10 +651,7 @@ export default class TCaBCIClient {
       return Promise.reject(new Error(ALREADY_CONNECTED))
     }
 
-    const options = new Options(this._readNodeWSAddress)
-    options.setCustomWS(this._wsLibrary)
-
-    this._ws = new TWebSocket(options)
+    this._ws = new TWebSocket(this._options)
 
     this._ws.addErrorListener((e) => {
       this.setConnected(false)
