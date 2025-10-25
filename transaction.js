@@ -106,7 +106,7 @@ export const TX_TYPE_MASTER = 'initial_storage',
   },
   TX_TYPE_LIST = Object.keys(TX_TYPE).map((k) => TX_TYPE[k])
 
-export default class Transaction {
+export class Transaction {
   _id
   _height
   _version

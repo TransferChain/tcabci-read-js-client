@@ -13,7 +13,7 @@ export class Options {
   _protocols = []
   _customWS
   _endpoints = ['ws', 'longpoll']
-  _version = `v2.5.6`
+  _version = `v2.5.7`
 
   _maxConnectionDelay = 10000
   _minReconnectionDelay = 1000 + Math.random() * 4000
@@ -54,8 +54,9 @@ export class Options {
     if (this._timeout > LongTimeout)
       throw new Error(`timeout less than LongTimeout`)
 
+    // eslint-disable-next-line
     try {
-      new URL(this.url())
+      new URL(this.url)
 
       return true
     } catch (e) {
@@ -66,7 +67,7 @@ export class Options {
   /**
    * @return {boolean}
    */
-  isLongPool() {
+  get isLongPool() {
     // return this._longpoll
 
     return false
@@ -85,7 +86,7 @@ export class Options {
   /**
    * @return {boolean}
    */
-  debug() {
+  get debug() {
     return this._debug
   }
 
@@ -99,12 +100,14 @@ export class Options {
       throw new TypeError('invalid endpoints')
 
     this._endpoints = [wsEndpoint, longpollEndpoint]
+
+    return this
   }
 
   /**
    * @return {Array<string>}
    */
-  endpoints() {
+  get endpoints() {
     return this._endpoints
   }
 
@@ -121,7 +124,7 @@ export class Options {
   /**
    * @return {number}
    */
-  maxConnectionDelay() {
+  get maxConnectionDelay() {
     return this._maxConnectionDelay
   }
 
@@ -138,7 +141,7 @@ export class Options {
   /**
    * @return {number}
    */
-  minReconnectionDelay() {
+  get minReconnectionDelay() {
     return this._minReconnectionDelay
   }
 
@@ -155,7 +158,7 @@ export class Options {
   /**
    * @return {number}
    */
-  reconnectionDelayGrowFactor() {
+  get reconnectionDelayGrowFactor() {
     return this._reconnectionDelayGrowFactor
   }
 
@@ -172,7 +175,7 @@ export class Options {
   /**
    * @return {number}
    */
-  minUptime() {
+  get minUptime() {
     return this._minUptime
   }
 
@@ -189,7 +192,7 @@ export class Options {
   /**
    * @return {number}
    */
-  maxRetries() {
+  get maxRetries() {
     return this._maxRetries
   }
 
@@ -206,7 +209,7 @@ export class Options {
   /**
    * @return {number}
    */
-  maxEnqueuedMessages() {
+  get maxEnqueuedMessages() {
     return this._maxEnqueuedMessages
   }
 
@@ -226,7 +229,7 @@ export class Options {
   /**
    * @return {Array<string>}
    */
-  protocols() {
+  get protocols() {
     return this._protocols
   }
 
@@ -243,14 +246,14 @@ export class Options {
   /**
    * @return {any}
    */
-  customWS() {
+  get customWS() {
     return this._customWS
   }
 
   /**
    * @return {string}
    */
-  url() {
+  get url() {
     if (this._host.length > 2 && this._host.slice(0, 2) === 'ws') {
       return `${this._host}${![HTTPPort, HTTPSPort].includes(this._port) ? `:${this._port}` : ''}`
     }
