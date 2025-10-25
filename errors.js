@@ -13,8 +13,9 @@ export const ALREADY_CONNECTED = 'Already connected',
   TRANSACTION_NOT_BROADCAST = 'Transaction can not be broadcast'
 
 export class FetchError extends Error {
-  code = -1
-  response = {}
+  status = -1
+  response
+  originError
 
   /**
    * @param {string} message
@@ -24,18 +25,35 @@ export class FetchError extends Error {
     this.name = 'FetchError'
   }
 
+  /**
+   * @param {number} status
+   * @return {FetchError}
+   */
+  setStatus(status) {
+    this.status = status
+
+    return this
+  }
+
+  /**
+   * @deprecated use .setStatus/1
+   * @param {number} code
+   * @return {FetchError}
+   */
   setCode(code) {
-    this.code = code
+    this.status = code
 
     return this
   }
 
   setResponse(data) {
-    this.response = {
-      status: this.code,
-      message: this.message,
-      data: data,
-    }
+    this.response = data
+
+    return this
+  }
+
+  setOriginError(error) {
+    this.originError = error
 
     return this
   }
