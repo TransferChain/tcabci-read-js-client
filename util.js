@@ -1,11 +1,11 @@
-export function toJSON(data) {
+export function fromJSON(data) {
   return JSON.parse(data)
 }
 
 export function isJSON(str) {
   try {
     JSON.parse(str)
-  } catch (e) {
+  } catch (_e) {
     return false
   }
 

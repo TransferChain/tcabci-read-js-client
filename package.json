@@ -5,10 +5,11 @@
   "main": "client.js",
   "type": "module",
   "scripts": {
+    "format": "prettier --write \"**/*.{js,md,json}\" --ignore-path .gitignore",
+    "lint:fix": "eslint --fix",
     "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000",
     "test:all": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000 '*_test.js'",
-    "test:coverage": "export NODE_ENV=test || SET \"NODE_ENV=test\" && nyc --reporter=text mocha  --require esm --timeout 5000",
-    "format": "prettier --write \"**/*.{js,md,json}\" --ignore-path .gitignore"
+    "test:coverage": "export NODE_ENV=test || SET \"NODE_ENV=test\" && nyc --reporter=text mocha  --require esm --timeout 5000"
   },
   "repository": {
     "type": "git",
@@ -23,7 +24,11 @@
   "packageManager": "pnpm@10.19.0",
   "devDependencies": {
     "@eslint/js": "^9.38.0",
+    "@types/chai": "^5.2.3",
     "chai": "^6.2.0",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "esm": "^3.2.25",
     "express": "^5.1.0",
     "globals": "^16.4.0",

@@ -49,28 +49,28 @@ export class TWebSocket {
   }
 
   /**
-   * @return {Array<string>}
+   * @return {Array<function>}
    */
   get openListeners() {
     return this._openCallbacks
   }
 
   /**
-   * @return {Array<string>}
+   * @return {Array<function>}
    */
   get messageListeners() {
     return this._messageCallbacks
   }
 
   /**
-   * @return {Array<string>}
+   * @return {Array<function>}
    */
   get errorListeners() {
     return this._errorCallbacks
   }
 
   /**
-   * @return {Array<string>}
+   * @return {Array<function>}
    */
   get closeListeners() {
     return this._closeCallbacks
@@ -252,8 +252,8 @@ export class TWebSocket {
 
   _make() {
     this._client = new ReconnectingWebSocket(
-      this._options.url(),
-      this._options.protocols(),
+      this._options.url,
+      this._options.protocols,
       this._options.make(),
     )
 

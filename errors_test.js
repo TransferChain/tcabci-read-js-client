@@ -3,7 +3,7 @@ import unitJS from 'unit.js'
 
 describe('Errors', () => {
   it('FetchError', () => {
-    const err = new FetchError('err1').setCode(1)
+    const err = new FetchError('err1').setStatus(1)
 
     unitJS.assert.equal(err.message, 'err1')
     unitJS.assert.equal(err.code, 1)

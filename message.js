@@ -1,5 +1,5 @@
 import { INVALID_ARGUMENTS, INVALID_ARGUMENT_WITH_CS } from './errors.js'
-import { MESSAGE_TYPE } from './constants.js'
+import { SUBSCRIBEMessage, UNSUBSCRIBEMessage } from './constants.js'
 import { TX_TYPE_LIST } from './transaction.js'
 
 export default class Message {
@@ -53,10 +53,7 @@ export default class Message {
       throw new Error(INVALID_ARGUMENT_WITH_CS('signedData'))
     }
 
-    if (
-      [MESSAGE_TYPE.SUBSCRIBE, MESSAGE_TYPE.UNSUBSCRIBE].indexOf(this._type) ===
-      -1
-    ) {
+    if (![SUBSCRIBEMessage, UNSUBSCRIBEMessage].includes(this._type)) {
       throw new Error(INVALID_ARGUMENTS)
     }
 

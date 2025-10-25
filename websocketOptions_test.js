@@ -44,7 +44,7 @@ describe('Options', () => {
   it('isLongPoll/0', () => {
     const options = new Options('localhost')
 
-    expect(options.isLongPool()).to.be.equal(false)
+    expect(options.isLongPool).to.be.equal(false)
   })
 
   it('setEndpoints/2 with valid params', () => {
@@ -81,7 +81,7 @@ describe('Options', () => {
     const options = new Options('localhost')
 
     options.setProtocols(['wamp', 'soap'])
-    expect(options.protocols()).to.have.deep.members(['wamp', 'soap'])
+    expect(options.protocols).to.have.deep.members(['wamp', 'soap'])
   })
 
   it('setCustomWS/1 with valid params', () => {
@@ -94,25 +94,25 @@ describe('Options', () => {
     const options = new Options('localhost')
 
     options.setCustomWS(WebSocket)
-    expect(options.customWS()).to.be.eq(WebSocket)
+    expect(options.customWS).to.be.eq(WebSocket)
   })
 
   it('url/0', () => {
     const options = new Options('localhost.localdomain')
 
-    expect(options.url()).to.equal('wss://localhost.localdomain/ws')
+    expect(options.url).to.equal('wss://localhost.localdomain/ws')
   })
 
   it('url/0 with protocol', () => {
     const options = new Options('ws://localhost.localdomain')
 
-    expect(options.url()).to.equal('ws://localhost.localdomain')
+    expect(options.url).to.equal('ws://localhost.localdomain')
   })
 
   it('url/0 with protocol case two', () => {
     const options = new Options('wss://localhost.localdomain/ws')
 
-    expect(options.url()).to.equal('wss://localhost.localdomain/ws')
+    expect(options.url).to.equal('wss://localhost.localdomain/ws')
   })
 
   it('make/0', () => {
