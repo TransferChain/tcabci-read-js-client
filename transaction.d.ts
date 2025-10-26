@@ -52,8 +52,7 @@ export declare const TX_TYPE_MASTER: TXType,
   TX_TYPE_COLLECTION: TXType,
   TX_TYPE_COLLECTION_POLICY: TXType;
 
-export declare const TX_TYPE: Record<string, TXType>,
-  TX_TYPE_LIST: TXType[];
+export declare const TX_TYPE_LIST: TXType[];
 
 export declare class Transaction {
   constructor(

@@ -20,7 +20,7 @@ import Message from './message.js'
 import { isJSON, fromJSON } from './util.js'
 import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
-import { TX_TYPE, TX_TYPE_LIST } from './transaction.js'
+import { TX_TYPE_LIST } from './transaction.js'
 
 /**
  * @callback successCallback
@@ -49,7 +49,7 @@ export default class TCaBCIClient {
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = `v2.5.7`
+  _version = `v2.5.8`
   /**
    * @type {?successCallback}
    */
@@ -209,7 +209,7 @@ export default class TCaBCIClient {
         throw new Error(INVALID_ARGUMENT_WITH_CS('txTypes'))
 
       for (let i = 0; i < txTypes.length; i++) {
-        if (!TX_TYPE[txTypes[i]])
+        if (!TX_TYPE_LIST.includes(txTypes[i]))
           throw new Error(INVALID_ARGUMENT_WITH_CS('txType ', txTypes[i]))
       }
     }
