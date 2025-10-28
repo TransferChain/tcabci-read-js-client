@@ -28,16 +28,14 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(subscribed, false)
       })
       .then(() => {
-        return client.Disconnect()
+        return client.Stop()
       })
       .then(() => {
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
 
@@ -61,16 +59,14 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(subscribed, false)
       })
       .then(() => {
-        return client.Disconnect()
+        return client.Stop()
       })
       .then(() => {
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
 
@@ -114,16 +110,14 @@ describe('TCaBCIClient', () => {
         })
       })
       .then(() => {
-        return client.Disconnect()
+        return client.Stop()
       })
       .then(() => {
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
 
@@ -151,16 +145,14 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, true)
 
-        return client.Disconnect()
+        return client.Stop()
       })
       .then(() => {
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
 
@@ -182,16 +174,14 @@ describe('TCaBCIClient', () => {
           ['invalid'],
         )
 
-        return client.Disconnect()
+        return client.Stop()
       })
       .then(() => {
         done(new Error('invalid'))
       })
       .catch(() => {
-        done()
-      })
-      .finally(() => {
         client.Stop()
+        done()
       })
   })
 
@@ -227,16 +217,14 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, false)
 
-        return client.Disconnect()
+        return client.Stop()
       })
       .then(() => {
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
 
@@ -248,13 +236,12 @@ describe('TCaBCIClient', () => {
       .then(({ blocks, total_count }) => {
         unitJS.array(blocks).hasLength(1)
         unitJS.assert.equal(total_count, 1)
+        client.Stop()
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
 
@@ -275,13 +262,12 @@ describe('TCaBCIClient', () => {
       .then((data) => {
         unitJS.value(data.txs.length).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
+        client.Stop()
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
   //
@@ -300,14 +286,12 @@ describe('TCaBCIClient', () => {
         unitJS.value(data.last_block_height).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
         unitJS.value(data.last_transaction).isNotEmpty()
-
+        client.Stop()
         done()
       })
       .catch((err) => {
-        done(err)
-      })
-      .finally(() => {
         client.Stop()
+        done(err)
       })
   })
 
@@ -321,14 +305,13 @@ describe('TCaBCIClient', () => {
         sender_addr: '',
         recipient_addr: '',
       })
-
+      client.Stop()
       done(new Error('invalid'))
     } catch (err) {
       unitJS.assert.equal(TRANSACTION_TYPE_NOT_VALID, err.message)
+      client.Stop()
       done()
     }
-
-    client.Stop()
   })
 
   it('should error not broadcast transaction', (done) => {
@@ -349,14 +332,13 @@ describe('TCaBCIClient', () => {
       })
       .then((data) => {
         unitJS.assert.notEqual(data.data.hash, '')
+        client.Stop()
         done()
       })
       .catch((err) => {
         unitJS.assert.equal(TRANSACTION_NOT_BROADCAST, err.message)
-        done()
-      })
-      .finally(() => {
         client.Stop()
+        done()
       })
   })
 
@@ -366,21 +348,20 @@ describe('TCaBCIClient', () => {
     client
       .Bulk([])
       .then(() => {
+        client.Stop()
         done(new Error('invalid return'))
       })
       .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
-        done()
-      })
-      .finally(() => {
         client.Stop()
+        done()
       })
   })
 
   it('should error in bulk tx if addresses count is greater than 251', (done) => {
     const addresses = []
 
-    for (let i = 0; i < 51; i++) {
+    for (let i = 0; i < 252; i++) {
       addresses.push(
         '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN',
       )
@@ -391,14 +372,13 @@ describe('TCaBCIClient', () => {
     client
       .Bulk(addresses)
       .then(() => {
+        client.Stop()
         done(new Error('invalid return'))
       })
       .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
-        done()
-      })
-      .finally(() => {
         client.Stop()
+        done()
       })
   })
 })
