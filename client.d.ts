@@ -1,4 +1,5 @@
 import { TXType } from './transaction'
+import { SuccessCallback, ErrorCallback, CloseCallback, ListenCallback } from './callback'
 
 declare class TCaBCIClient {
   constructor(
@@ -7,15 +8,19 @@ declare class TCaBCIClient {
     chainName: string,
     chainVersion: string,
   )
-
   SetDebug(debug: boolean): TCaBCIClient
-  Socket(): WebSocket
-  SetSuccessCallback(cb: (event: Event) => void): TCaBCIClient
-  SetErrorCallback(cb: (event: Event) => void): TCaBCIClient
-  SetCloseCallback(cb: (event: Event) => void): TCaBCIClient
-  SetListenCallback(cb: (event: Event) => void): TCaBCIClient
+  SetSuccessCallback(cb: SuccessCallback): TCaBCIClient
+  SetErrorCallback(cb: ErrorCallback): TCaBCIClient
+  SetCloseCallback(cb: CloseCallback): TCaBCIClient
+  SetListenCallback(cb: ListenCallback): TCaBCIClient
+  IsConnected(): boolean
+  IsSubscribed(): boolean
+  get SubscribeAddresses(): string[]
+  get SubscribedSignedData(): Record<string, string> | null
+  get Socket(): WebSocket
   Start(): Awaited<TCaBCIClient>
-  Stop(): Awaited<TCaBCIClient>
+  Stop(code?: number): Awaited<TCaBCIClient>
+  Reconnect(code?: number): Awaited<TCaBCIClient>
   Status(): {
     chain_name: string
     chain_version: string
@@ -105,8 +110,6 @@ declare class TCaBCIClient {
     chainName?: string,
     chainVersion?: string,
   ): Promise<{ data: Record<string, any> }>
-  Disconnect(code?: number): Awaited<TCaBCIClient>
-  Reconnect(code?: number): Awaited<TCaBCIClient>
 }
 
 export = TCaBCIClient

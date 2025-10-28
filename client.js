@@ -23,47 +23,51 @@ import { TWebSocket } from './websocket.js'
 import { TX_TYPE_LIST } from './transaction.js'
 
 /**
- * @callback successCallback
+ * @callback SuccessCallback
  * @param {Event} event
  * @return void
  */
+
 /**
- * @callback errorCallback
+ * @callback ErrorCallback
  * @param {Event} event
  * @return void
  */
+
 /**
- * @callback closeCallback
+ * @callback CloseCallback
  * @param {Event} event
  * @return void
  */
+
 /**
- * @callback listenCallback
+ * @callback ListenCallback
  * @param {*} message
  * @return void
  */
+
 export default class TCaBCIClient {
   _subscribed = false
   _subscribedAddresses = []
-  _subscribedSignedData = {}
+  _SubscribedSignedData = {}
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = `v2.5.8`
+  _version = `v2.5.9`
   /**
-   * @type {?successCallback}
+   * @type {?SuccessCallback}
    */
   _successCb = null
   /**
-   * @type {?errorCallback}
+   * @type {?ErrorCallback}
    */
   _errorCb = null
   /**
-   * @type {?closeCallback}
+   * @type {?CloseCallback}
    */
   _closeCb = null
   /**
-   * @type {?listenCallback}
+   * @type {?ListenCallback}
    */
   _listenCb = null
   _wsLibrary = null
@@ -116,12 +120,8 @@ export default class TCaBCIClient {
     return this
   }
 
-  Socket() {
-    return this._ws
-  }
-
   /**
-   * @param {successCallback} cb
+   * @param {SuccessCallback} cb
    * @return {TCaBCIClient}
    */
   SetSuccessCallback(cb) {
@@ -131,7 +131,7 @@ export default class TCaBCIClient {
   }
 
   /**
-   * @param {errorCallback} cb
+   * @param {ErrorCallback} cb
    * @return {TCaBCIClient}
    */
   SetErrorCallback(cb) {
@@ -141,7 +141,7 @@ export default class TCaBCIClient {
   }
 
   /**
-   * @param {closeCallback} cb
+   * @param {CloseCallback} cb
    * @return {TCaBCIClient}
    */
   SetCloseCallback(cb) {
@@ -151,7 +151,7 @@ export default class TCaBCIClient {
   }
 
   /**
-   * @param {listenCallback} cb
+   * @param {ListenCallback} cb
    * @return {TCaBCIClient}
    */
   SetListenCallback(cb) {
@@ -160,21 +160,53 @@ export default class TCaBCIClient {
     return this
   }
 
+  IsConnected() {
+    return this._connected
+  }
+
+  IsSubscribed() {
+    return this._subscribed
+  }
+
+  get SubscribeAddresses() {
+    return this._subscribedAddresses
+  }
+
+  get SubscribedSignedData() {
+    return this._SubscribedSignedData
+  }
+
+  get Socket() {
+    return this._ws
+  }
+
+  async Reconnect(code = 1000) {
+    if (this.IsConnected()) {
+      await this._disconnect(code)
+    }
+
+    await this._connect()
+
+    return this
+  }
+
   async Start() {
-    return this.connect()
+    return this._connect()
   }
 
   /**
+   * @param {?number} code
    * @return {Awaited<TCaBCIClient>}
    * @throws {Error}
    */
-  async Stop() {
-    if (!this.getConnected()) {
+  async Stop(code = 1000) {
+    if (!this.IsConnected()) {
       throw new Error(NOT_CONNECTED)
     }
-    await this.Disconnect(1000)
-    this.setConnected(false)
-    this.setSubscribed(false)
+
+    await this._disconnect(code)
+    this._setConnected(false)
+    this._setSubscribed(false)
 
     return this
   }
@@ -214,35 +246,30 @@ export default class TCaBCIClient {
       }
     }
 
-    if (!this.getConnected()) throw new Error(NOT_CONNECTED)
+    if (!this.IsConnected()) throw new Error(NOT_CONNECTED)
 
-    let addrs = [],
-      sdata = {}
+    const addrs = [],
+      sdata = signedData ?? this.SubscribedSignedData
 
-    addrs = addresses
-    sdata = signedData
+    addrs.push(...addresses)
 
-    if (this.getSubscribeAddresses().length > 0) {
+    if (this.SubscribeAddresses.length > 0) {
       let newAddress = []
 
       for (let i = 0; i < addresses.length; i++) {
-        if (this.getSubscribeAddresses().indexOf(addresses[i]) === -1) {
+        if (this.SubscribeAddresses.indexOf(addresses[i]) === -1) {
           newAddress.push(addresses[i])
         }
       }
-      addrs = newAddress
-    }
-
-    if (this.getSubscribedSignedData().length > 0) {
-      sdata = this.getSubscribedSignedData()
+      addrs.push(...newAddress)
     }
 
     const message = new Message(true, SUBSCRIBEMessage, addrs, sdata, txTypes)
 
     this._ws.send(message.ToJSON())
-    this.setSubscribeAddresses(addrs, true)
-      .setSubscribeSignedData(signedData)
-      .setSubscribed(true)
+    this._setSubscribeAddresses(addrs, true)
+      ._setSubscribeSignedData(signedData)
+      ._setSubscribed(true)
 
     return this
   }
@@ -251,19 +278,15 @@ export default class TCaBCIClient {
    * @return {TCaBCIClient}
    */
   Unsubscribe() {
-    if (!this.getSubscribed()) {
+    if (!this.IsSubscribed()) {
       throw new Error(NOT_SUBSCRIBED)
     }
     this._ws.send(
-      new Message(
-        true,
-        UNSUBSCRIBEMessage,
-        this.getSubscribeAddresses(),
-      ).ToJSON(),
+      new Message(true, UNSUBSCRIBEMessage, this.SubscribeAddresses).ToJSON(),
     )
-    this.setSubscribed(false)
-    this.setSubscribeAddresses([])
-    this.setSubscribeSignedData({})
+    this._setSubscribed(false)
+    this._setSubscribeAddresses([])
+    this._setSubscribeSignedData({})
 
     return this
   }
@@ -591,68 +614,43 @@ export default class TCaBCIClient {
     })
   }
 
-  /**
-   * @param {?number} code
-   * @return {Promise<TCaBCIClient>}
-   */
-  async Disconnect(code = 1000) {
-    if (this.getConnected()) {
-      await this._ws.disconnect(code)
-
-      this.setConnected(false)
-      this.setSubscribed(false)
-    }
-
-    return this
-  }
-
-  async Reconnect(code = 1000) {
-    if (this.getConnected()) {
-      await this.Disconnect(code)
-    }
-
-    await this.connect()
-
-    return this
-  }
-
-  callSuccessCallback(event) {
+  _callSuccessCallback(event) {
     if (this._successCb) this._successCb(event)
   }
 
-  callErrorCallback(event) {
+  _callErrorCallback(event) {
     if (this._errorCb) this._errorCb(event)
   }
 
-  callCloseCallback(event) {
+  _callCloseCallback(event) {
     if (this._closeCb) this._closeCb(event)
   }
 
-  callListenCallback(message) {
+  _callListenCallback(message) {
     if (this._listenCb) this._listenCb(message)
   }
 
   /**
    * @return {Promise<TWebSocket>}
    */
-  async connect() {
-    if (this.getConnected()) {
+  async _connect() {
+    if (this.IsConnected()) {
       return Promise.reject(new Error(ALREADY_CONNECTED))
     }
 
     this._ws = new TWebSocket(this._options)
 
     this._ws.addErrorListener((e) => {
-      this.setConnected(false)
-      this.setSubscribed(false)
-      this.setSubscribeAddresses([], false)
-      this.setSubscribeSignedData({})
-      this.callErrorCallback(e)
+      this._setConnected(false)
+      this._setSubscribed(false)
+      this._setSubscribeAddresses([], false)
+      this._setSubscribeSignedData({})
+      this._callErrorCallback(e)
     })
 
     this._ws.addOpenListener((e) => {
-      this.setConnected(true)
-      this.callSuccessCallback(e)
+      this._setConnected(true)
+      this._callSuccessCallback(e)
     })
 
     this._ws.addMessageListener((message) => {
@@ -660,44 +658,43 @@ export default class TCaBCIClient {
         return { status: message.data }
       }
 
-      this.callListenCallback(
+      this._callListenCallback(
         !isJSON(message.data) ? message.data : fromJSON(message.data),
       )
     })
 
     this._ws.addCloseListener((e) => {
-      this.setConnected(false)
-      this.setSubscribed(false)
-      this.setSubscribeAddresses([], false)
-      this.setSubscribeSignedData({})
-      this.callCloseCallback(e)
+      this._setConnected(false)
+      this._setSubscribed(false)
+      this._setSubscribeAddresses([], false)
+      this._setSubscribeSignedData({})
+      this._callCloseCallback(e)
     })
 
     return this._ws.connect()
   }
 
-  getConnected() {
-    return this._connected
+  /**
+   * @param {?number} code
+   * @return {Promise<TCaBCIClient>}
+   */
+  async _disconnect(code = 1000) {
+    if (this.IsConnected()) {
+      await this._ws.disconnect(code)
+
+      this._setConnected(false)
+      this._setSubscribed(false)
+    }
+
+    return this
   }
 
-  setConnected(value) {
-    this._connected = value
-  }
-
-  getSubscribed() {
-    return this._subscribed
-  }
-
-  setSubscribed(value) {
+  _setSubscribed(value) {
     this._subscribed = value
   }
 
-  getSubscribeAddresses() {
-    return this._subscribedAddresses
-  }
-
-  getSubscribedSignedData() {
-    return this._subscribedSignedData
+  _setConnected(value) {
+    this._connected = value
   }
 
   /**
@@ -705,7 +702,7 @@ export default class TCaBCIClient {
    * @param {?boolean} push
    * @return {TCaBCIClient}
    */
-  setSubscribeAddresses(addresses, push = false) {
+  _setSubscribeAddresses(addresses, push = false) {
     if (push) {
       this._subscribedAddresses.push(...addresses)
 
@@ -720,8 +717,8 @@ export default class TCaBCIClient {
    * @param {Object} signedData
    * @return {TCaBCIClient}
    */
-  setSubscribeSignedData(signedData) {
-    this._subscribedSignedData = signedData
+  _setSubscribeSignedData(signedData) {
+    this._SubscribedSignedData = signedData
 
     return this
   }

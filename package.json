@@ -1,6 +1,6 @@
 {
   "name": "@tchain/tcabci-read-js-client",
-  "version": "2.5.8",
+  "version": "2.5.9",
   "description": "TransferChain Fastest Read Network WebSocket Client",
   "main": "client.js",
   "type": "module",
@@ -15,6 +15,17 @@
     "type": "git",
     "url": "git+https://github.com/TransferChain/tcabci-read-js-client.git"
   },
+  "files": [
+    "*.d.ts",
+    "constants.js",
+    "client.js",
+    "errors.js",
+    "message.js",
+    "transaction.js",
+    "util.js",
+    "websocket.js",
+    "websocketOptions.js"
+  ],
   "author": "TransferChain A.G <info@transferchain.io>",
   "license": "Apache-2.0",
   "bugs": {

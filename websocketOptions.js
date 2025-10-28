@@ -13,7 +13,7 @@ export class Options {
   _protocols = []
   _customWS
   _endpoints = ['ws', 'longpoll']
-  _version = `v2.5.8`
+  _version = `v2.5.9`
 
   _maxConnectionDelay = 10000
   _minReconnectionDelay = 1000 + Math.random() * 4000
