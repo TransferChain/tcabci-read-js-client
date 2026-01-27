@@ -1,4 +1,4 @@
-import { TXType } from './transaction'
+import { Transaction, TXType } from './transaction'
 import { SuccessCallback, ErrorCallback, CloseCallback, ListenCallback } from './callback'
 
 declare class TCaBCIClient {
@@ -36,8 +36,8 @@ declare class TCaBCIClient {
   LastBlock(
     chainName?: null,
     chainVersion?: null,
-  ): { blocks: Record<string, any>; total_count: number }
-  Tx(id: string, signature: string): Promise<{ tx: Record<string, any> }>
+  ): { blocks: Transaction[]; total_count: number }
+  Tx(id: string, signature: string): Promise<{ tx: Transaction }>
   TxSummary({
     recipientAddrs,
     senderAddrs,

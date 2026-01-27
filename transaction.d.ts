@@ -1,4 +1,4 @@
-export declare type TXType = string;
+export declare type TXType = string
 
 export declare const TX_TYPE_MASTER: TXType,
   TX_TYPE_ADDRESS: TXType,
@@ -50,34 +50,43 @@ export declare const TX_TYPE_MASTER: TXType,
   TX_TYPE_PASSWD_DATAV2: TXType,
   TX_TYPE_PASSWD_DATAV2_POLICY: TXType,
   TX_TYPE_COLLECTION: TXType,
-  TX_TYPE_COLLECTION_POLICY: TXType;
+  TX_TYPE_COLLECTION_POLICY: TXType
 
-export declare const TX_TYPE_LIST: TXType[];
+export declare const TX_TYPE_LIST: TXType[]
 
 export declare class Transaction {
-  constructor(
-    id: string,
-    height: number,
-    version: number,
-    typ: TXType,
-    sender_addr: string,
-    recipient_addr: string,
-    data: string,
-    sign: string,
-    fee: number,
-    hash: string,
-    inserted_at: Date,
-  )
-  get ID(): string;
-  get Height(): number;
-  get Version(): number;
-  get Typ(): TXType;
-  get SenderAddr(): string;
-  get RecipientAddr(): string;
-  get Data(): string;
-  get Sign(): string;
-  get Fee(): number;
-  get Hash(): string;
-  get InsertedAt(): Date;
-  ToJSON(): string;
+  constructor({
+    id,
+    height,
+    version,
+    typ,
+    sender_addr,
+    recipient_addr,
+    data,
+    sign,
+    fee,
+    hash,
+    inserted_at,
+    additionalData,
+    cipherData,
+  }?: Record<string, any>)
+  get ID(): string
+  get Height(): number
+  get Version(): number
+  get Typ(): TXType
+  get SenderAddr(): string
+  get RecipientAddr(): string
+  get Data(): string
+  get AdditionalData(): string
+  get CipherData(): string
+  get Sign(): string
+  get Fee(): number
+  get Hash(): string
+  get InsertedAt(): Date
+  static FromJSON(value: string): { transaction?: Transaction; error?: Error }
+  static FromObject(obj: Record<string, any>): {
+    transaction?: Transaction
+    error?: Error
+  }
+  ToJSON(): string
 }

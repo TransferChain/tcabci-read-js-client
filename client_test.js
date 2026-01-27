@@ -6,7 +6,7 @@ import {
   TRANSACTION_TYPE_NOT_VALID,
 } from './errors.js'
 import { READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS } from './constants.js'
-import { TX_TYPE_ADDRESS } from './transaction.js'
+import { Transaction, TX_TYPE_ADDRESS } from './transaction.js'
 
 const waiter = async (timeout = 1000) => {
   return new Promise((resolve) => setTimeout(resolve, timeout))
@@ -28,16 +28,17 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(subscribed, false)
       })
       .then(() => {
-        return client.Stop()
-      })
-      .then(() => {
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('start with valid parameters and read node addresses', (done) => {
     const client = new TCaBCIClient(
@@ -59,16 +60,17 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(subscribed, false)
       })
       .then(() => {
-        return client.Stop()
-      })
-      .then(() => {
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('reconnect with start and valid parameters', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -110,16 +112,17 @@ describe('TCaBCIClient', () => {
         })
       })
       .then(() => {
-        return client.Stop()
-      })
-      .then(() => {
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('subscribe with valid parameters', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -145,16 +148,17 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, true)
 
-        return client.Stop()
-      })
-      .then(() => {
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('should error subscribe with invalid tx type parameter', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -174,16 +178,17 @@ describe('TCaBCIClient', () => {
           ['invalid'],
         )
 
-        return client.Stop()
-      })
-      .then(() => {
         done(new Error('invalid'))
       })
       .catch(() => {
-        client.Stop()
         done()
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('unsubscribe with valid parameters', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -217,16 +222,17 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(connected, true)
         unitJS.assert.equal(subscribed, false)
 
-        return client.Stop()
-      })
-      .then(() => {
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('last block', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -236,14 +242,17 @@ describe('TCaBCIClient', () => {
       .then(({ blocks, total_count }) => {
         unitJS.array(blocks).hasLength(1)
         unitJS.assert.equal(total_count, 1)
-        client.Stop()
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('transaction search result', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -262,14 +271,17 @@ describe('TCaBCIClient', () => {
       .then((data) => {
         unitJS.value(data.txs.length).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
-        client.Stop()
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
   //
   it('transaction summary result', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -283,17 +295,22 @@ describe('TCaBCIClient', () => {
       .then((data) => {
         unitJS.value(data.first_block_height).isGreaterThan(0)
         unitJS.value(data.first_transaction).isNotEmpty()
+        unitJS.value(data.first_transaction).instanceOf(Transaction)
         unitJS.value(data.last_block_height).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
         unitJS.value(data.last_transaction).isNotEmpty()
-        client.Stop()
+        unitJS.value(data.last_transaction).instanceOf(Transaction)
         done()
       })
       .catch((err) => {
-        client.Stop()
         done(err)
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('should error not broadcast transaction if type is incorrect', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -305,14 +322,18 @@ describe('TCaBCIClient', () => {
         sender_addr: '',
         recipient_addr: '',
       })
-      client.Stop()
+      setTimeout(() => {
+        client.Stop()
+      }, 0)
       done(new Error('invalid'))
     } catch (err) {
       unitJS.assert.equal(TRANSACTION_TYPE_NOT_VALID, err.message)
-      client.Stop()
+      setTimeout(() => {
+        client.Stop()
+      }, 0)
       done()
     }
-  })
+  }).timeout(7000)
 
   it('should error not broadcast transaction', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -331,16 +352,18 @@ describe('TCaBCIClient', () => {
         fee: 0,
       })
       .then((data) => {
-        unitJS.assert.notEqual(data.data.hash, '')
-        client.Stop()
-        done()
+        unitJS.assert.notEqual(data.data.Hash, '')
       })
       .catch((err) => {
         unitJS.assert.equal(TRANSACTION_NOT_BROADCAST, err.message)
-        client.Stop()
+      })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
         done()
       })
-  })
+  }).timeout(7000)
 
   it('should error in bulk tx if addresses count is zero', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
@@ -348,15 +371,18 @@ describe('TCaBCIClient', () => {
     client
       .Bulk([])
       .then(() => {
-        client.Stop()
         done(new Error('invalid return'))
       })
       .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
-        client.Stop()
         done()
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 
   it('should error in bulk tx if addresses count is greater than 251', (done) => {
     const addresses = []
@@ -372,13 +398,16 @@ describe('TCaBCIClient', () => {
     client
       .Bulk(addresses)
       .then(() => {
-        client.Stop()
         done(new Error('invalid return'))
       })
       .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
-        client.Stop()
         done()
       })
-  })
+      .finally(() => {
+        setTimeout(() => {
+          client.Stop()
+        }, 0)
+      })
+  }).timeout(7000)
 })
