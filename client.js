@@ -17,20 +17,19 @@ import {
   READ_NODE_WS_ADDRESS,
 } from './constants.js'
 import Message from './message.js'
-import { isJSON, fromJSON } from './util.js'
 import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
-import { TX_TYPE_LIST } from './transaction.js'
+import { Transaction, TX_TYPE_LIST } from './transaction.js'
 
 /**
  * @callback SuccessCallback
- * @param {Event} event
+ * @param {Transaction} event
  * @return void
  */
 
 /**
  * @callback ErrorCallback
- * @param {Event} event
+ * @param {Error|Event|ErrorEvent} event
  * @return void
  */
 
@@ -249,7 +248,7 @@ export default class TCaBCIClient {
     if (!this.IsConnected()) throw new Error(NOT_CONNECTED)
 
     const addrs = [],
-      sdata = signedData ?? this.SubscribedSignedData
+      _signedData = signedData ?? this.SubscribedSignedData
 
     addrs.push(...addresses)
 
@@ -264,7 +263,13 @@ export default class TCaBCIClient {
       addrs.push(...newAddress)
     }
 
-    const message = new Message(true, SUBSCRIBEMessage, addrs, sdata, txTypes)
+    const message = new Message(
+      true,
+      SUBSCRIBEMessage,
+      addrs,
+      _signedData,
+      txTypes,
+    )
 
     this._ws.send(message.ToJSON())
     this._setSubscribeAddresses(addrs, true)
@@ -294,7 +299,7 @@ export default class TCaBCIClient {
   /**
    * @param {?string} chainName
    * @param {?string} chainVersion
-   * @return {Promise<{blocks: Object<string, *>, total_count: number}>}
+   * @return {Promise<{blocks: Transaction[], total_count: number}>}
    */
   LastBlock(chainName = null, chainVersion = null) {
     return this._httpClient(
@@ -304,7 +309,15 @@ export default class TCaBCIClient {
       },
     )
       .then((res) => {
-        return { blocks: res.data, total_count: res.total_count }
+        const data = []
+
+        for (const _data of res.data) {
+          const { transaction, error } = Transaction.FromObject(_data)
+          if (error) return Promise.reject(error)
+          data.push(transaction)
+        }
+
+        return { blocks: data, total_count: res.total_count }
       })
       .catch((e) => this._handleRestError(e, new Error(BLOCK_NOT_FOUND)))
   }
@@ -324,7 +337,10 @@ export default class TCaBCIClient {
       headers: { 'X-Signature': signature },
     })
       .then((res) => {
-        return { tx: res.data }
+        const { transaction, error } = Transaction.FromObject(res.data)
+        if (error) return Promise.reject(error)
+
+        return { tx: transaction }
       })
       .catch((e) => this._handleRestError(e))
   }
@@ -364,13 +380,22 @@ export default class TCaBCIClient {
       }),
     })
       .then((res) => {
+        const { transaction, error } = Transaction.FromObject(
+          res.data.first_transaction,
+        )
+        if (error) return Promise.reject(error)
+
+        const { transaction: lastTransaction, error: errorTwo } =
+          Transaction.FromObject(res.data.last_transaction)
+        if (errorTwo) return Promise.reject(errorTwo)
+
         return {
           chain_name: res.data.chain_name,
           chain_version: res.data.chain_version,
           first_block_height: res.data.first_block_height,
-          first_transaction: res.data.first_transaction,
+          first_transaction: transaction,
           last_block_height: res.data.last_block_height,
-          last_transaction: res.data.last_transaction,
+          last_transaction: lastTransaction,
           total_count: res.total_count,
         }
       })
@@ -434,8 +459,16 @@ export default class TCaBCIClient {
       }),
     })
       .then((res) => {
+        const data = []
+
+        for (const _data of res.data) {
+          const { transaction, error } = Transaction.FromObject(_data)
+          if (error) return Promise.reject(error)
+          data.push(transaction)
+        }
+
         return {
-          txs: res.data,
+          txs: data,
           total_count: res.total_count,
         }
       })
@@ -614,22 +647,6 @@ export default class TCaBCIClient {
     })
   }
 
-  _callSuccessCallback(event) {
-    if (this._successCb) this._successCb(event)
-  }
-
-  _callErrorCallback(event) {
-    if (this._errorCb) this._errorCb(event)
-  }
-
-  _callCloseCallback(event) {
-    if (this._closeCb) this._closeCb(event)
-  }
-
-  _callListenCallback(message) {
-    if (this._listenCb) this._listenCb(message)
-  }
-
   /**
    * @return {Promise<TWebSocket>}
    */
@@ -658,9 +675,7 @@ export default class TCaBCIClient {
         return { status: message.data }
       }
 
-      this._callListenCallback(
-        !isJSON(message.data) ? message.data : fromJSON(message.data),
-      )
+      this._callListenCallback(message.data)
     })
 
     this._ws.addCloseListener((e) => {
@@ -723,10 +738,28 @@ export default class TCaBCIClient {
     return this
   }
 
+  _callSuccessCallback(event) {
+    if (this._successCb) this._successCb(event)
+  }
+
+  _callErrorCallback(event) {
+    if (this._errorCb) this._errorCb(event)
+  }
+
+  _callCloseCallback(event) {
+    if (this._closeCb) this._closeCb(event)
+  }
+
+  _callListenCallback(message) {
+    const { transaction, error } = Transaction.FromJSON(message)
+    if (error) this._callErrorCallback(error)
+    else if (this._listenCb) this._listenCb(transaction)
+  }
+
   /**
    * @param {string} uri
    * @param {RequestInit} req
-   * @return {Promise<any>}
+   * @return {Promise<Record<string, any>>}
    */
   _httpClient(uri, req) {
     req.cache = 'no-cache'

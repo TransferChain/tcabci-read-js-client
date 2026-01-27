@@ -26,6 +26,8 @@ export class TWebSocket {
   _errorCallbacks = []
   _closeCallbacks = []
 
+  _connectionErrorCount = 0
+
   /**
    * @param {Options} options
    * @constructor
@@ -251,6 +253,8 @@ export class TWebSocket {
   }
 
   _make() {
+    if (this._connectionErrorCount > 15) return
+
     this._client = new ReconnectingWebSocket(
       this._options.url,
       this._options.protocols,
@@ -258,6 +262,7 @@ export class TWebSocket {
     )
 
     this._openListener = (e) => {
+      this._connectionErrorCount = 0
       this._onOpen(e)
     }
     this._client.addEventListener('open', this._openListener)
@@ -274,6 +279,15 @@ export class TWebSocket {
 
     this._errorListener = (e) => {
       this._onError(e)
+      if (this._connectionErrorCount > 15) {
+        this._onError(new Error('Internet connectivity problem!'))
+        this._disconnect().catch((err) => {
+          this._onError(err)
+        })
+
+        return
+      }
+      this._connectionErrorCount++
     }
     this._client.addEventListener('error', this._errorListener)
   }
@@ -308,6 +322,7 @@ export class TWebSocket {
     this._messageListener = () => {}
 
     this._client.close(code)
+    this._connectionErrorCount = 0
   }
 
   /**
@@ -319,7 +334,7 @@ export class TWebSocket {
   }
 
   /**
-   * @param {ErrorEvent} event
+   * @param {Error|Event|ErrorEvent} event
    * @private
    */
   _onError(event) {
