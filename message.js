@@ -1,6 +1,8 @@
 import { INVALID_ARGUMENTS, INVALID_ARGUMENT_WITH_CS } from './errors.js'
-import { SUBSCRIBEMessage, UNSUBSCRIBEMessage } from './constants.js'
 import { TX_TYPE_LIST } from './transaction.js'
+
+export const SUBSCRIBEMessage = 'subscribe',
+  UNSUBSCRIBEMessage = 'unsubscribe'
 
 export default class Message {
   _is_web = false

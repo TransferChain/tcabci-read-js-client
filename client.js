@@ -10,13 +10,8 @@ import {
   TRANSACTION_NOT_BROADCAST,
   TRANSACTION_TYPE_NOT_VALID,
 } from './errors.js'
-import {
-  SUBSCRIBEMessage,
-  UNSUBSCRIBEMessage,
-  READ_NODE_ADDRESS,
-  READ_NODE_WS_ADDRESS,
-} from './constants.js'
-import Message from './message.js'
+import { READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS } from './constants.js'
+import Message, { SUBSCRIBEMessage, UNSUBSCRIBEMessage } from './message.js'
 import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
 import { Transaction, TX_TYPE_LIST } from './transaction.js'
@@ -52,7 +47,7 @@ export default class TCaBCIClient {
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = `v2.6.0`
+  _version = `v2.6.1`
   /**
    * @type {?SuccessCallback}
    */
@@ -353,7 +348,15 @@ export default class TCaBCIClient {
    * @param {?Array<string>} types
    * @param {?string} chainName
    * @param {?string} chainVersion
-   * @return {Promise<any>}
+   * @return {Promise<{
+   *           chain_name: string,
+   *           chain_version: string,
+   *           first_block_height: number,
+   *           first_transaction: Transaction,
+   *           last_block_height: number,
+   *           last_transaction: Transaction,
+   *           total_count: number,
+   *         }>}
    */
   TxSummary({
     recipientAddrs,
@@ -419,7 +422,7 @@ export default class TCaBCIClient {
    * @param {string} orderBy
    * @param {?string} chainName
    * @param {?string} chainVersion
-   * @return {Promise<any>}
+   * @return {Promise<{txs: Transaction[], total_count: number}>}
    */
   TxSearch({
     heightOperator,
@@ -517,6 +520,8 @@ export default class TCaBCIClient {
    * @param {number} version
    * @param {string} type
    * @param {string} data
+   * @param {?string} additional_data
+   * @param {?string} cipher_data
    * @param {string} sender_addr
    * @param {string} recipient_addr
    * @param {string} sign
@@ -528,6 +533,8 @@ export default class TCaBCIClient {
     version,
     type,
     data,
+    additional_data = null,
+    cipher_data = null,
     sender_addr,
     recipient_addr,
     sign,
@@ -539,6 +546,8 @@ export default class TCaBCIClient {
         version,
         type,
         data,
+        additional_data,
+        cipher_data,
         sender_addr,
         recipient_addr,
         sign,
@@ -554,6 +563,8 @@ export default class TCaBCIClient {
    * @param {number} version
    * @param {string} type
    * @param {string} data
+   * @param {?string} additional_data
+   * @param {?string} cipher_data
    * @param {string} sender_addr
    * @param {string} recipient_addr
    * @param {string} sign
@@ -565,6 +576,8 @@ export default class TCaBCIClient {
     version,
     type,
     data,
+    additional_data = null,
+    cipher_data = null,
     sender_addr,
     recipient_addr,
     sign,
@@ -576,6 +589,8 @@ export default class TCaBCIClient {
         version,
         type,
         data,
+        additional_data,
+        cipher_data,
         sender_addr,
         recipient_addr,
         sign,
@@ -587,7 +602,18 @@ export default class TCaBCIClient {
   }
 
   broadcast(
-    { id, version, type, data, sender_addr, recipient_addr, sign, fee },
+    {
+      id,
+      version,
+      type,
+      data,
+      additional_data = null,
+      cipher_data = null,
+      sender_addr,
+      recipient_addr,
+      sign,
+      fee,
+    },
     sync = false,
     commit = false,
   ) {
@@ -604,6 +630,8 @@ export default class TCaBCIClient {
           version,
           type,
           data,
+          ...(additional_data ? { additional_data } : {}),
+          ...(cipher_data ? { cipher_data } : {}),
           sender_addr,
           recipient_addr,
           sign,

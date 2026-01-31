@@ -50,9 +50,9 @@ declare class TCaBCIClient {
     chain_name: string
     chain_version: string
     first_block_height: number
-    first_transaction: Record<string, any>
+    first_transaction: Transaction
     last_block_height: number
-    last_transaction: Record<string, any>
+    last_transaction: Transaction
     total_count: number
   }>
   TxSearch({
@@ -72,12 +72,14 @@ declare class TCaBCIClient {
     orderBy,
     chainName,
     chainVersion,
-  }): Promise<{ txs: Record<string, any>[]; total_count: number }>
+  }): Promise<{ txs: Transaction[]; total_count: number }>
   BroadcastCommit({
     id,
     version,
     type,
     data,
+    additional_data,
+    cipher_data,
     sender_addr,
     recipient_addr,
     sign,
@@ -88,6 +90,8 @@ declare class TCaBCIClient {
     version,
     type,
     data,
+    additional_data,
+    cipher_data,
     sender_addr,
     recipient_addr,
     sign,
@@ -98,6 +102,8 @@ declare class TCaBCIClient {
     version,
     type,
     data,
+    additional_data,
+    cipher_data,
     sender_addr,
     recipient_addr,
     sign,
