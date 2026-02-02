@@ -47,7 +47,7 @@ export default class TCaBCIClient {
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
-  _version = `v2.5.11`
+  _version = `v2.6.1`
   /**
    * @type {?SuccessCallback}
    */
@@ -792,7 +792,7 @@ export default class TCaBCIClient {
   _httpClient(uri, req) {
     req.cache = 'no-cache'
     req.headers = {
-      Client: `tcabaci-read-js-client-${this._version}`,
+      Client: `tcabaci-read-js-client/${this._version}`,
     }
     req.priority = 'high'
 
