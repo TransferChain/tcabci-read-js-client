@@ -166,8 +166,6 @@ export class Transaction {
     this._inserted_at = inserted_at
     if (additionalData) this._additionalData = additionalData
     if (cipherData) this._cipherData = cipherData
-
-    this._validate()
   }
 
   get ID() {
@@ -299,8 +297,8 @@ export class Transaction {
     })
   }
 
-  _validate() {
-    if (typeof this._id !== 'number')
+  Validate() {
+    if (typeof this._id === 'undefined')
       throw new Error(INVALID_ARGUMENT_WITH_CS('id'))
     if (typeof this._height !== 'number')
       throw new Error(INVALID_ARGUMENT_WITH_CS('height'))
