@@ -227,6 +227,7 @@ export class Transaction {
 
       if (parsed.order) tx._order = parsed.order
       tx._id = parsed.id
+      tx._typ = parsed.typ
       if (parsed.identifier) tx._identifier = parsed.identifier
       tx._height = parsed.height
       tx._version = parsed.version
@@ -252,6 +253,7 @@ export class Transaction {
 
       if (obj.order) tx._order = obj.order
       tx._id = obj.id
+      tx._typ = obj.typ
       if (obj.identifier) tx._identifier = obj.identifier
       tx._height = obj.height
       tx._version = obj.version
@@ -276,7 +278,7 @@ export class Transaction {
    * @throws Error
    */
   ToJSON() {
-    this._validate()
+    this.Validate()
 
     return JSON.stringify({
       id: this._id,
