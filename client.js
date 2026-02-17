@@ -383,20 +383,29 @@ export default class TCaBCIClient {
       }),
     })
       .then((res) => {
-        const { transaction, error } = Transaction.FromObject(
-          res.data.first_transaction,
-        )
-        if (error) return Promise.reject(error)
+        let firstTransaction, lastTransaction
 
-        const { transaction: lastTransaction, error: errorTwo } =
-          Transaction.FromObject(res.data.last_transaction)
-        if (errorTwo) return Promise.reject(errorTwo)
+        if (res.data.first_transaction) {
+          const { transaction, error } = Transaction.FromObject(
+            res.data.first_transaction,
+          )
+          if (error) return Promise.reject(error)
+          firstTransaction = transaction
+        }
+
+        if (res.data.last_transaction) {
+          const { transaction, error: errorTwo } = Transaction.FromObject(
+            res.data.last_transaction,
+          )
+          if (errorTwo) return Promise.reject(errorTwo)
+          lastTransaction = transaction
+        }
 
         return {
           chain_name: res.data.chain_name,
           chain_version: res.data.chain_version,
           first_block_height: res.data.first_block_height,
-          first_transaction: transaction,
+          first_transaction: firstTransaction,
           last_block_height: res.data.last_block_height,
           last_transaction: lastTransaction,
           total_count: res.total_count,
