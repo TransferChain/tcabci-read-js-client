@@ -69,7 +69,10 @@ export declare class Transaction {
     inserted_at,
     additionalData,
     cipherData,
+    chainName,
+    chainVersion,
   }?: Record<string, any>)
+  get Order(): number
   get ID(): string
   get Height(): number
   get Version(): number
@@ -83,10 +86,13 @@ export declare class Transaction {
   get Fee(): number
   get Hash(): string
   get InsertedAt(): Date
+  get ChainName(): string
+  get ChainVersion(): string
   static FromJSON(value: string): { transaction?: Transaction; error?: Error }
   static FromObject(obj: Record<string, any>): {
     transaction?: Transaction
     error?: Error
   }
   ToJSON(): string
+  ToObject(): Record<string, any>
 }
