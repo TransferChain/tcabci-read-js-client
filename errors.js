@@ -12,6 +12,24 @@ export const ALREADY_CONNECTED = 'Already connected',
   TRANSACTION_TYPE_NOT_VALID = 'Transaction type is not valid',
   TRANSACTION_NOT_BROADCAST = 'Transaction can not be broadcast'
 
+export class CopiedError extends Error {
+  originName
+  originError
+  originStack
+
+  /**
+   * @param {Error} err
+   */
+  constructor(err) {
+    super(err.message)
+    this.name = 'CopiedError'
+    this.originName = err.name
+    this.originError = err
+    this.stack = err.stack
+    this.originStack = err.stack
+  }
+}
+
 export class FetchError extends Error {
   status = -1
   response
