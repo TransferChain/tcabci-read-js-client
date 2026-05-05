@@ -3,7 +3,7 @@ import { Breaker } from './breaker.js'
 
 export class HTTP {
   _baseURL
-  _version = 'v2.7.0'
+  _version = 'v2.7.1'
   _breaker = new Breaker()
   constructor(baseURL = null) {
     this._baseURL = baseURL
