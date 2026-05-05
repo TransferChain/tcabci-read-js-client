@@ -1,8 +1,6 @@
 import {
-  FetchError,
   ALREADY_CONNECTED,
   BLOCK_NOT_FOUND,
-  ERR_NETWORK,
   INVALID_ARGUMENT_WITH_CS,
   INVALID_ARGUMENTS,
   NOT_CONNECTED,
@@ -23,6 +21,7 @@ import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
 import { Transaction, TX_TYPE_LIST } from './transaction.js'
 import { Block } from './block.js'
+import { HTTP } from './http.js'
 
 /**
  * @callback SuccessCallback
@@ -51,6 +50,7 @@ import { Block } from './block.js'
  */
 
 export default class TCaBCIClient {
+  _httpClient = new HTTP()
   _subscribed = false
   _subscribedAddresses = []
   _SubscribedSignedData = {}
@@ -110,6 +110,7 @@ export default class TCaBCIClient {
 
       this._readNodeAddress = readNodeAddresses[0]
       this._readNodeWSAddress = readNodeAddresses[1]
+      this._httpClient.setBaseURL(readNodeAddresses[0])
     }
 
     this._options = new Options(this._readNodeWSAddress)
@@ -309,12 +310,13 @@ export default class TCaBCIClient {
    * @return {Promise<{blocks: Transaction[], total_count: number}>}
    */
   LastBlock(chainName = null, chainVersion = null) {
-    return this._httpClient(
-      `/v1/blocks?chain_name=${chainName ?? this._chainName}&chain_version=${chainVersion ?? this._chainVersion}&limit=1&offset=0`,
-      {
-        method: 'GET',
-      },
-    )
+    return this._httpClient
+      .request(
+        `/v1/blocks?chain_name=${chainName ?? this._chainName}&chain_version=${chainVersion ?? this._chainVersion}&limit=1&offset=0`,
+        {
+          method: 'GET',
+        },
+      )
       .then((res) => {
         const data = []
 
@@ -326,7 +328,7 @@ export default class TCaBCIClient {
 
         return { blocks: data, total_count: res.total_count }
       })
-      .catch((e) => this._handleRestError(e, new Error(BLOCK_NOT_FOUND)))
+      .catch((e) => this._httpClient.handleError(e, new Error(BLOCK_NOT_FOUND)))
   }
 
   /**
@@ -339,17 +341,18 @@ export default class TCaBCIClient {
       return Promise.reject(new Error(INVALID_ARGUMENTS))
     }
 
-    return this._httpClient(`/v1/tx/${id}`, {
-      method: 'GET',
-      headers: { 'X-Signature': signature },
-    })
+    return this._httpClient
+      .request(`/v1/tx/${id}`, {
+        method: 'GET',
+        headers: { 'X-Signature': signature },
+      })
       .then((res) => {
         const { transaction, error } = Transaction.FromObject(res.data)
         if (error) return Promise.reject(error)
 
         return { tx: transaction }
       })
-      .catch((e) => this._handleRestError(e))
+      .catch((e) => this._httpClient.handleError(e))
   }
 
   /**
@@ -383,17 +386,18 @@ export default class TCaBCIClient {
       return Promise.reject(new Error(INVALID_ARGUMENTS))
     }
 
-    return this._httpClient('/v1/tx_summary', {
-      method: 'POST',
-      body: JSON.stringify({
-        chain_name: chainName ?? this._chainName,
-        chain_version: chainVersion ?? this._chainVersion,
-        recipient_addrs: recipientAddrs,
-        sender_addrs: senderAddrs,
-        signed_addrs: signedData,
-        ...(types ? { types: types } : { typ: typ }),
-      }),
-    })
+    return this._httpClient
+      .request('/v1/tx_summary', {
+        method: 'POST',
+        body: JSON.stringify({
+          chain_name: chainName ?? this._chainName,
+          chain_version: chainVersion ?? this._chainVersion,
+          recipient_addrs: recipientAddrs,
+          sender_addrs: senderAddrs,
+          signed_addrs: signedData,
+          ...(types ? { types: types } : { typ: typ }),
+        }),
+      })
       .then((res) => {
         let firstTransaction, lastTransaction
 
@@ -423,7 +427,7 @@ export default class TCaBCIClient {
           total_count: res.total_count,
         }
       })
-      .catch((e) => this._handleRestError(e))
+      .catch((e) => this._httpClient.handleError(e))
   }
 
   /**
@@ -463,25 +467,26 @@ export default class TCaBCIClient {
     chainName = null,
     chainVersion = null,
   }) {
-    return this._httpClient('/v1/tx_search/p', {
-      method: 'POST',
-      body: JSON.stringify({
-        chain_name: chainName ?? this._chainName,
-        chain_version: chainVersion ?? this._chainVersion,
-        height: `${heightOperator} ${height}`,
-        ...(maxHeight ? { max_height: maxHeight } : {}),
-        ...(lastOrder ? { last_order: lastOrder } : {}),
-        ...(recipientAddrs ? { recipient_addrs: recipientAddrs } : {}),
-        ...(senderAddrs ? { sender_addrs: senderAddrs } : {}),
-        ...(signedData ? { signed_addrs: signedData } : {}),
-        ...(hashes ? { hashes: hashes } : {}),
-        ...(limit ? { limit: limit } : {}),
-        ...(offset ? { offset: offset } : {}),
-        ...(orderField ? { order_field: orderField } : {}),
-        ...(orderBy ? { order_by: orderBy } : {}),
-        ...(types ? { types: types } : typ ? { typ: typ } : {}),
-      }),
-    })
+    return this._httpClient
+      .request('/v1/tx_search/p', {
+        method: 'POST',
+        body: JSON.stringify({
+          chain_name: chainName ?? this._chainName,
+          chain_version: chainVersion ?? this._chainVersion,
+          height: `${heightOperator} ${height}`,
+          ...(maxHeight ? { max_height: maxHeight } : {}),
+          ...(lastOrder ? { last_order: lastOrder } : {}),
+          ...(recipientAddrs ? { recipient_addrs: recipientAddrs } : {}),
+          ...(senderAddrs ? { sender_addrs: senderAddrs } : {}),
+          ...(signedData ? { signed_addrs: signedData } : {}),
+          ...(hashes ? { hashes: hashes } : {}),
+          ...(limit ? { limit: limit } : {}),
+          ...(offset ? { offset: offset } : {}),
+          ...(orderField ? { order_field: orderField } : {}),
+          ...(orderBy ? { order_by: orderBy } : {}),
+          ...(types ? { types: types } : typ ? { typ: typ } : {}),
+        }),
+      })
       .then((res) => {
         const data = []
 
@@ -496,7 +501,7 @@ export default class TCaBCIClient {
           total_count: res.total_count,
         }
       })
-      .catch((e) => this._handleRestError(e))
+      .catch((e) => this._httpClient.handleError(e))
   }
 
   /**
@@ -642,9 +647,8 @@ export default class TCaBCIClient {
       throw new Error(TRANSACTION_TYPE_NOT_VALID)
     }
 
-    return this._httpClient(
-      commit ? '/v1/tx/commit' : sync ? '/v1/tx/sync' : '/v1/tx',
-      {
+    return this._httpClient
+      .request(commit ? '/v1/tx/commit' : sync ? '/v1/tx/sync' : '/v1/tx', {
         method: 'POST',
         body: JSON.stringify({
           id,
@@ -658,13 +662,14 @@ export default class TCaBCIClient {
           sign,
           fee,
         }),
-      },
-    )
+      })
       .then((res) => {
         return { data: res.data }
       })
       .catch((e) =>
-        this._handleRestError(e, { 400: new Error(TRANSACTION_NOT_BROADCAST) }),
+        this._httpClient.handleError(e, {
+          400: new Error(TRANSACTION_NOT_BROADCAST),
+        }),
       )
   }
 
@@ -684,7 +689,7 @@ export default class TCaBCIClient {
     chainName = null,
     chainVersion = null,
   ) {
-    return this._httpClient('/v1/bulk_tx', {
+    return this._httpClient.request('/v1/bulk_tx', {
       method: 'POST',
       body: JSON.stringify({
         chain_name: chainName ?? this._chainName,
@@ -838,71 +843,6 @@ export default class TCaBCIClient {
       }
     } else {
       if (this._listenCb) this._listenCb(null, transaction, null)
-    }
-  }
-
-  /**
-   * @param {string} uri
-   * @param {RequestInit} req
-   * @return {Promise<Record<string, any>>}
-   */
-  _httpClient(uri, req) {
-    req.cache = 'no-cache'
-    req.headers = {
-      Client: `tcabaci-read-js-client/${this._version}`,
-    }
-    req.priority = 'high'
-
-    return fetch(this._readNodeAddress + uri, req).then((response) =>
-      this._handleRestResponse(response),
-    )
-  }
-
-  /**
-   * @param {Response} response
-   * @return {Promise<*>}
-   */
-  async _handleRestResponse(response) {
-    if (response.status >= 200 && response.status < 400) {
-      return response.json()
-    }
-
-    try {
-      const data = JSON.parse(await response.text())
-
-      return Promise.reject(
-        new FetchError(data.message)
-          .setStatus(response.status)
-          .setResponse(data),
-      )
-    } catch (e) {
-      return Promise.reject(
-        new FetchError(response.statusText).setOriginError(e),
-      )
-    }
-  }
-
-  /**
-   * @param {Error} err
-   * @param {?Object|Error} custom
-   * @throws Error
-   */
-  _handleRestError(err, custom = null) {
-    const code = err.code
-
-    if (custom && typeof custom === 'object' && custom[code]) {
-      throw custom[code]
-    } else if (custom instanceof Error) {
-      throw custom
-    }
-
-    switch (code) {
-      case 400:
-        throw new Error(INVALID_ARGUMENTS)
-      case 'ERR_NETWORK':
-        throw new Error(ERR_NETWORK)
-      default:
-        throw err
     }
   }
 }

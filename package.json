@@ -18,6 +18,8 @@
   "files": [
     "*.d.ts",
     "constants.js",
+    "breaker.js",
+    "http.js",
     "block.js",
     "client.js",
     "errors.js",
@@ -51,6 +53,7 @@
     "ws": "^8.20.0"
   },
   "dependencies": {
+    "cockatiel": "^3.2.1",
     "reconnecting-websocket": "^4.4.0"
   }
 }
