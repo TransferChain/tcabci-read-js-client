@@ -22,7 +22,7 @@ export class Options {
   _maxRetries = 10
   _maxEnqueuedMessages = Infinity
   _startClosed = false
-  _debug = !!process.env.DEBUG
+  _debug = false
 
   /**
    * @param {string} host
