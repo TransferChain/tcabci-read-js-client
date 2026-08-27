@@ -41,7 +41,18 @@ declare class TCaBCIClient {
   LastBlock(
     chainName?: null,
     chainVersion?: null
-  ): Promise<{ blocks: Transaction[]; total_count: number }>
+  ): Promise<{
+    blocks: Transaction[]
+    info: {
+      chainName: string
+      chainVersion: string
+      hash: string
+      height: number
+      txs: number
+      createdAt: Date
+    }
+    total_count: number
+  }>
   Tx(id: string, signature: string): Promise<{ tx: Transaction }>
   TxSummary({
     recipientAddrs,

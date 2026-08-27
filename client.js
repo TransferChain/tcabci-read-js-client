@@ -307,7 +307,8 @@ export default class TCaBCIClient {
   /**
    * @param {?string} chainName
    * @param {?string} chainVersion
-   * @return {Promise<{blocks: Transaction[], total_count: number}>}
+   * @return {Promise<{blocks: [], info: {chain_name: null, chain_version: null, hash: *, height: *, txs: *, created_at: *}, total_count: *} | Error>}
+   * @constructor
    */
   LastBlock(chainName = null, chainVersion = null) {
     return this._httpClient
@@ -318,15 +319,18 @@ export default class TCaBCIClient {
         }
       )
       .then(res => {
-        const data = []
-
-        for (const _data of res.data) {
-          const { transaction, error } = Transaction.FromObject(_data)
-          if (error) return Promise.reject(error)
-          data.push(transaction)
+        return {
+          blocks: [],
+          info: {
+            chainName: chainName,
+            chainVersion: chainVersion,
+            hash: res.data.hash,
+            height: res.data.height,
+            txs: res.data.txs,
+            createdAt: new Date(res.data.inserted_at)
+          },
+          total_count: res.total_count
         }
-
-        return { blocks: data, total_count: res.total_count }
       })
       .catch(e => this._httpClient.handleError(e, new Error(BLOCK_NOT_FOUND)))
   }
