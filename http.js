@@ -20,9 +20,8 @@ export class HTTP {
    */
   async request(uri, req) {
     req.cache = 'no-cache'
-    req.headers = {
-      Client: `tcabaci-read-js-client/${this._version}`
-    }
+    if (!req.headers) req.headers = {}
+    req.headers['Client'] = `tcabaci-read-js-client/${this._version}`
     req.priority = 'high'
 
     return this._breaker
