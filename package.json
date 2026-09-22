@@ -50,9 +50,9 @@
     "mocha": "^11.8.0",
     "nyc": "^18.0.0",
     "oxfmt": "^0.63.0",
-    "oxlint": "^1.80.0",
+    "oxlint": "^1.84.0",
     "unit.js": "^2.1.1",
     "ws": "^8.21.3"
   },
-  "packageManager": "pnpm@11.24.0"
+  "packageManager": "pnpm@12.5.1"
 }
