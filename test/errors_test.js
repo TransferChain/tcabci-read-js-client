@@ -1,4 +1,4 @@
-import { FetchError } from './errors.js'
+import { FetchError } from '../errors.js'
 import unitJS from 'unit.js'
 
 describe('Errors', () => {

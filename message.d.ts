@@ -1,48 +1,51 @@
-import { TXType } from './transaction'
+import { TXType } from './transaction.js'
+import { JSONValue, ParseResult } from './types.js'
 
-export declare type MessageType = string
+export type MessageType = 'subscribe' | 'unsubscribe' | 0 | 1 | 2 | 3 | 4
 
-export declare const SUBSCRIBEMessage: MessageType,
-  UNSUBSCRIBEMessage: MessageType
+export type MType = 0 | 1 | 2 | 3 | 4
 
-export declare type MType = number
+export type MState = 1 | 2
 
-export declare const Block: MessageType,
-  Transaction: MessageType,
-  Subscription: MessageType,
-  Listen: MessageType,
-  MSG: MessageType
+export declare const SUBSCRIBEMessage: 'subscribe',
+  UNSUBSCRIBEMessage: 'unsubscribe',
+  Block: 0,
+  Transaction: 1,
+  Subscription: 2,
+  Listen: 3,
+  MSG: 4,
+  OK: 1,
+  FAIL: 2
 
-export declare type MState = number
-
-export declare const OK: MState, FAIL: MState
-
-export declare class Message {
-  constructor({
-    isWeb,
-    type,
-    addrs,
-    signedData,
-    txTypes
-  }?: {
-    isWeb: boolean
-    type: MessageType
-    addrs: string[]
-    signedData?: Record<string, string>
-    txTypes?: TXType[]
+export default class Message {
+  constructor(options?: {
+    isWeb?: boolean
+    type?: MessageType
+    addrs?: readonly string[]
+    signedData?: Readonly<Record<string, string>> | null
+    txTypes?: readonly TXType[] | null
+    data?: JSONValue
   })
-  get IsWeb(): boolean
-  get Type(): MessageType
-  get Addresses(): string[] | null
-  get SignedAddresses(): Record<string, string> | null
-  get TXTypes(): TXType[] | null
-  get Data(): any | null
-  get State(): MState | null
 
-  static FromJSON(value: string): { message?: Message; error?: Error }
-  static FromObject(obj: Record<string, any>): {
-    message?: Message
-    error?: Error
-  }
+  get IsWeb(): boolean | undefined
+
+  get Type(): MessageType | undefined
+
+  get Addresses(): readonly string[] | undefined
+
+  get SignedAddresses(): Readonly<Record<string, string>> | undefined
+
+  get TXTypes(): readonly TXType[] | undefined
+
+  get Data(): JSONValue | undefined
+
+  get State(): MState | undefined
+
+  static FromJSON(value: string): ParseResult<'message', Readonly<Message>>
+
+  static FromObject(
+    obj: Record<string, unknown>
+  ): ParseResult<'message', Readonly<Message>>
+
   ToJSON(): string
 }

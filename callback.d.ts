@@ -1,11 +1,16 @@
-import { Transaction } from './transaction'
-import { Block } from './block'
+import { Transaction } from './transaction.js'
+import { Block } from './block.js'
+import Message from './message.js'
+import { SocketCloseEvent } from './types.js'
 
-export declare type SuccessCallback = (event: Event) => void
-export declare type ErrorCallback = (event: Event) => void
-export declare type CloseCallback = (event: Event) => void
-export declare type ListenCallback = (
+export type SuccessCallback = (event: Event) => void
+
+export type ErrorCallback = (event: Error | Event) => void
+
+export type CloseCallback = (event: SocketCloseEvent) => void
+
+export type ListenCallback = (
   block: Block | null,
   tx: Transaction | null,
-  msg: any | null
+  msg: Message | null
 ) => void

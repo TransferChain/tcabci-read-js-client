@@ -2,7 +2,7 @@
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "ignorePatterns": ["**/node_modules/", "dist/"],
   "printWidth": 80,
-  "arrowParens": "avoid",
+  "arrowParens": "always",
   "bracketSpacing": true,
   "bracketSameLine": false,
   "htmlWhitespaceSensitivity": "strict",
@@ -11,5 +11,7 @@
   "quoteProps": "as-needed",
   "trailingComma": "none",
   "useTabs": false,
-  "vueIndentScriptAndStyle": false
+  "vueIndentScriptAndStyle": false,
+  "proseWrap": "always",
+  "embeddedLanguageFormatting": "off"
 }

@@ -5,7 +5,7 @@ import {
   HTTPPort,
   HTTPSPort,
   Options
-} from './websocketOptions.js'
+} from '../websocketOptions.js'
 import WebSocket from 'ws'
 
 describe('Options', () => {
@@ -117,6 +117,7 @@ describe('Options', () => {
 
   it('make/0', () => {
     const options = new Options('localhost.io')
+
     options.setDebug(true)
 
     const opts = options.make()
@@ -127,8 +128,8 @@ describe('Options', () => {
     expect(opts.minUptime).to.be.eq(5000)
     expect(opts.connectionTimeout).to.be.eq(DefaultTimeout)
     expect(opts.maxRetries).to.be.eq(10)
-    expect(opts.maxEnqueuedMessages).to.be.eq(Infinity)
+    expect(opts.maxEnqueuedMessages).to.be.eq(100)
     expect(opts.startClosed).to.be.eq(false)
-    expect(opts.debug).to.be.eq(true)
+    expect(opts.debug).to.be.eq(false)
   })
 })

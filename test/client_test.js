@@ -1,19 +1,19 @@
-import TCaBCIClient from './client.js'
+import TCaBCIClient from '../client.js'
 import { WebSocket } from 'ws'
 import unitJS from 'unit.js'
 import {
   TRANSACTION_NOT_BROADCAST,
   TRANSACTION_TYPE_NOT_VALID
-} from './errors.js'
-import { READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS } from './constants.js'
-import { Transaction, TX_TYPE_ADDRESS } from './transaction.js'
+} from '../errors.js'
+import { READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS } from '../constants.js'
+import { Transaction, TX_TYPE_ADDRESS } from '../transaction.js'
 
 const waiter = async (timeout = 1000) => {
-  return new Promise(resolve => setTimeout(resolve, timeout))
+  return new Promise((resolve) => setTimeout(resolve, timeout))
 }
 
 describe('TCaBCIClient', () => {
-  it('start with valid parameters', done => {
+  it('start with valid parameters', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -30,7 +30,7 @@ describe('TCaBCIClient', () => {
       .then(() => {
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -40,7 +40,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('start with valid parameters and read node addresses', done => {
+  it('start with valid parameters and read node addresses', (done) => {
     const client = new TCaBCIClient(
       [READ_NODE_ADDRESS, READ_NODE_WS_ADDRESS],
       WebSocket,
@@ -62,7 +62,7 @@ describe('TCaBCIClient', () => {
       .then(() => {
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -72,7 +72,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('reconnect with start and valid parameters', done => {
+  it('reconnect with start and valid parameters', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -90,13 +90,14 @@ describe('TCaBCIClient', () => {
       })
       .then(() => {
         const { connected: c2, subscribed: b2 } = client.Status()
+
         unitJS.assert.equal(c2, false)
         unitJS.assert.equal(b2, false)
 
         return waiter(500)
       })
       .then(() => {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
           setTimeout(
             (client, res) => {
               const { connected, subscribed } = client.Status()
@@ -114,7 +115,7 @@ describe('TCaBCIClient', () => {
       .then(() => {
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -124,7 +125,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('subscribe with valid parameters', done => {
+  it('subscribe with valid parameters', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -150,7 +151,7 @@ describe('TCaBCIClient', () => {
 
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -160,7 +161,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('should error subscribe with invalid tx type parameter', done => {
+  it('should error subscribe with invalid tx type parameter', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -190,7 +191,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('unsubscribe with valid parameters', done => {
+  it('unsubscribe with valid parameters', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -208,6 +209,7 @@ describe('TCaBCIClient', () => {
               '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN'
           }
         )
+
         const { connected, subscribed } = client.Status()
 
         unitJS.assert.equal(connected, true)
@@ -217,6 +219,7 @@ describe('TCaBCIClient', () => {
       })
       .then(() => {
         client.Unsubscribe()
+
         const { connected, subscribed } = client.Status()
 
         unitJS.assert.equal(connected, true)
@@ -224,7 +227,7 @@ describe('TCaBCIClient', () => {
 
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -234,7 +237,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('last block', done => {
+  it('last block', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -244,7 +247,7 @@ describe('TCaBCIClient', () => {
         unitJS.assert.equal(total_count, 1)
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -254,7 +257,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('transaction search result', done => {
+  it('transaction search result', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -268,12 +271,12 @@ describe('TCaBCIClient', () => {
         offset: 0,
         orderBy: 'ASC'
       })
-      .then(data => {
+      .then((data) => {
         unitJS.value(data.txs.length).isGreaterThan(0)
         unitJS.value(data.total_count).isGreaterThan(0)
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -283,7 +286,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
   //
-  it('transaction summary result', done => {
+  it('transaction summary result', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -292,7 +295,7 @@ describe('TCaBCIClient', () => {
           '2mSCzresfg8Gwu7LZ9k9BTWkQAcQEkvYHFUSCZE2ubM4QV89PTeSYwQDqBas3ykq2emHEK6VRvxdgoe1vrhBbQGN'
         ]
       })
-      .then(data => {
+      .then((data) => {
         unitJS.value(data.first_block_height).isGreaterThan(0)
         unitJS.value(data.first_transaction).isNotEmpty()
         unitJS.value(data.first_transaction).instanceOf(Transaction)
@@ -302,7 +305,7 @@ describe('TCaBCIClient', () => {
         unitJS.value(data.last_transaction).instanceOf(Transaction)
         done()
       })
-      .catch(err => {
+      .catch((err) => {
         done(err)
       })
       .finally(() => {
@@ -312,7 +315,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('should error not broadcast transaction if type is incorrect', done => {
+  it('should error not broadcast transaction if type is incorrect', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     try {
@@ -335,7 +338,7 @@ describe('TCaBCIClient', () => {
     }
   }).timeout(7000)
 
-  it('should error not broadcast transaction', done => {
+  it('should error not broadcast transaction', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -351,10 +354,10 @@ describe('TCaBCIClient', () => {
         sign: btoa('dummy sign'),
         fee: 0
       })
-      .then(data => {
+      .then((data) => {
         unitJS.assert.notEqual(data.data.Hash, '')
       })
-      .catch(err => {
+      .catch((err) => {
         unitJS.assert.equal(TRANSACTION_NOT_BROADCAST, err.message)
       })
       .finally(() => {
@@ -365,7 +368,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('should error in bulk tx if addresses count is zero', done => {
+  it('should error in bulk tx if addresses count is zero', (done) => {
     const client = new TCaBCIClient([], WebSocket, 'medusa', 'v2')
 
     client
@@ -373,7 +376,7 @@ describe('TCaBCIClient', () => {
       .then(() => {
         done(new Error('invalid return'))
       })
-      .catch(err => {
+      .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
         done()
       })
@@ -384,7 +387,7 @@ describe('TCaBCIClient', () => {
       })
   }).timeout(7000)
 
-  it('should error in bulk tx if addresses count is greater than 251', done => {
+  it('should error in bulk tx if addresses count is greater than 251', (done) => {
     const addresses = []
 
     for (let i = 0; i < 252; i++) {
@@ -400,7 +403,7 @@ describe('TCaBCIClient', () => {
       .then(() => {
         done(new Error('invalid return'))
       })
-      .catch(err => {
+      .catch((err) => {
         unitJS.assert.equal(400, err.response.status)
         done()
       })

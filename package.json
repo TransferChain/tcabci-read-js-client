@@ -24,35 +24,41 @@
     "transaction.js",
     "util.js",
     "websocket.js",
-    "websocketOptions.js"
+    "websocketOptions.js",
+    "bytea.js",
+    "validation.js"
   ],
   "type": "module",
   "main": "client.js",
+  "types": "client.d.ts",
   "scripts": {
     "format": "oxfmt ./",
     "lint": "oxfmt ./ && oxlint --fix ./",
     "lint:check": "oxfmt --check ./ && oxlint ./",
-    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000",
-    "test:all": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha  --require esm --timeout 5000 '*_test.js'",
-    "test:coverage": "export NODE_ENV=test || SET \"NODE_ENV=test\" && nyc --reporter=text mocha  --require esm --timeout 5000"
+    "test": "pnpm run test:unit && pnpm run test:security && pnpm run test:types",
+    "test:all": "pnpm test",
+    "test:coverage": "node --experimental-test-coverage --test test/security.test.js",
+    "test:unit": "mocha --timeout 5000 test/errors_test.js test/websocketOptions_test.js test/websocket_test.js",
+    "test:security": "node --test test/security.test.js",
+    "test:types": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2022 test/consumer.ts",
+    "test:integration": "mocha --timeout 7000 test/client_test.js"
   },
   "dependencies": {
-    "@streetbyters/js-debug": "^0.1.3",
     "cockatiel": "^4.0.0",
     "reconnecting-websocket": "^4.4.0"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",
     "chai": "^6.2.2",
-    "esm": "^3.2.25",
-    "express": "^5.2.1",
-    "globals": "^16.5.0",
     "mocha": "^11.8.0",
-    "nyc": "^18.0.0",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.84.0",
+    "typescript": "^5.9.3",
     "unit.js": "^2.1.1",
     "ws": "^8.21.3"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   },
   "packageManager": "pnpm@12.5.1"
 }

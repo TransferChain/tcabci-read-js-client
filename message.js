@@ -1,17 +1,20 @@
+import { SendThrow } from './util.js'
 import { INVALID_ARGUMENT_WITH_CS } from './errors.js'
 import { TX_TYPE_LIST } from './transaction.js'
-import { Debug } from '@streetbyters/js-debug'
+import {
+  addresses,
+  signedData as validateSignedData,
+  cloneAndFreeze
+} from './validation.js'
 
 export const SUBSCRIBEMessage = 'subscribe',
-  UNSUBSCRIBEMessage = 'unsubscribe'
-
-export const Block = 0,
+  UNSUBSCRIBEMessage = 'unsubscribe',
+  Block = 0,
   Transaction = 1,
   Subscription = 2,
   Listen = 3,
-  MSG = 4
-
-export const OK = 1,
+  MSG = 4,
+  OK = 1,
   FAIL = 2
 
 export default class Message {
@@ -41,10 +44,16 @@ export default class Message {
   } = {}) {
     this._is_web = isWeb
     this._type = type
-    if (addrs && Array.isArray(addrs)) this._addresses = addrs
-    if (typeof signedData === 'object') this._signedAddresses = signedData
-    if (txTypes && Array.isArray(txTypes)) this._txTypes = txTypes
-    if (data) this._data = data
+
+    if (addrs && Array.isArray(addrs))
+      this._addresses = Object.freeze(addresses(addrs))
+
+    if (signedData !== null) this._signedAddresses = cloneAndFreeze(signedData)
+
+    if (txTypes && Array.isArray(txTypes))
+      this._txTypes = Object.freeze([...txTypes])
+
+    if (data !== null) this._data = cloneAndFreeze(data)
   }
 
   get IsWeb() {
@@ -55,14 +64,22 @@ export default class Message {
     return this._type
   }
 
+  /** @returns {ReadonlyArray<string>|undefined} Frozen snapshot when present. */
   get Addresses() {
     return this._addresses
   }
 
+  /** @returns {Readonly<Record<string, string>>|undefined} Frozen snapshot when present. */
   get SignedAddresses() {
     return this._signedAddresses
   }
 
+  /** @returns {ReadonlyArray<import('./transaction.js').TXType>|undefined} Frozen snapshot when present. */
+  get TXTypes() {
+    return this._txTypes
+  }
+
+  /** @returns {import('./types.js').JSONValue|undefined} Frozen snapshot when present. */
   get Data() {
     return this._data
   }
@@ -71,47 +88,50 @@ export default class Message {
     return this._state
   }
 
+  /** @param {string} value @returns {import('./types.js').ParseResult<'message', Readonly<Message>>} */
   static FromJSON(value) {
+    if (typeof value !== 'string')
+      return { message: null, error: new Error('Invalid message JSON') }
+
     try {
-      const msg = new Message(),
-        parsed = JSON.parse(value)
-
-      msg._type = parsed.type
-      if (typeof parsed.addresses !== 'undefined')
-        msg._addresses = parsed.addresses
-      if (typeof parsed.signed_addresses !== 'undefined')
-        msg._signedAddresses = parsed.signed_addresses
-      if (typeof parsed.data !== 'undefined') msg._data = parsed.data
-      if (typeof parsed.tx_types !== 'undefined') msg._txTypes = parsed.tx_types
-      if (typeof parsed.state !== 'undefined') msg._state = parsed.state
-
-      msg._validate()
-
-      return { message: this, error: null }
-    } catch (e) {
-      Debug.error(e)
-      return { message: null, error: e }
+      return Message.FromObject(JSON.parse(value))
+    } catch {
+      return { message: null, error: new Error('Invalid message JSON') }
     }
   }
 
+  /** @param {Record<string, unknown>} obj @returns {import('./types.js').ParseResult<'message', Readonly<Message>>} */
   static FromObject(obj) {
     try {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj))
+        SendThrow(new TypeError('Invalid message'))
+
       const msg = new Message()
 
       msg._type = obj.type
-      if (typeof obj.addresses !== 'undefined') msg._addresses = obj.addresses
+
+      if (typeof obj.is_web !== 'undefined') msg._is_web = obj.is_web
+
+      if (typeof obj.addresses !== 'undefined')
+        msg._addresses = Object.freeze(addresses(obj.addresses))
+
       if (typeof obj.signed_addresses !== 'undefined')
-        msg._signedAddresses = obj.signed_addresses
-      if (typeof obj.data !== 'undefined') msg._data = obj.data
-      if (typeof obj.tx_types !== 'undefined') msg._txTypes = obj.tx_types
+        msg._signedAddresses = Object.freeze(
+          validateSignedData(obj.signed_addresses)
+        )
+
+      if (typeof obj.data !== 'undefined') msg._data = cloneAndFreeze(obj.data)
+
+      if (typeof obj.tx_types !== 'undefined')
+        msg._txTypes = cloneAndFreeze(obj.tx_types)
+
       if (typeof obj.state !== 'undefined') msg._state = obj.state
 
       msg._validate()
 
-      return { message: this, error: null }
-    } catch (e) {
-      Debug.error(e)
-      return { message: null, error: e }
+      return { message: Object.freeze(msg), error: null }
+    } catch {
+      return { message: null, error: new Error('Invalid message payload') }
     }
   }
 
@@ -126,7 +146,8 @@ export default class Message {
         ? { signed_addresses: this._signedAddresses }
         : {}),
       ...(this._txTypes ? { tx_types: this._txTypes } : {}),
-      ...(this._data ? { data: this._data } : {})
+      ...(typeof this._data !== 'undefined' ? { data: this._data } : {}),
+      ...(typeof this._state !== 'undefined' ? { state: this._state } : {})
     })
   }
 
@@ -138,21 +159,18 @@ export default class Message {
       throw new Error(INVALID_ARGUMENT_WITH_CS('is_web'))
     }
 
-    if (typeof this._type === 'undefined') {
+    if (
+      ![
+        SUBSCRIBEMessage,
+        UNSUBSCRIBEMessage,
+        Block,
+        Transaction,
+        Subscription,
+        Listen,
+        MSG
+      ].includes(this._type)
+    )
       throw new Error(INVALID_ARGUMENT_WITH_CS('type'))
-    } else {
-      if (
-        typeof this._type === 'string' &&
-        ![SUBSCRIBEMessage, UNSUBSCRIBEMessage].includes(this._type)
-      ) {
-        throw new Error(INVALID_ARGUMENT_WITH_CS('type'))
-      } else if (
-        typeof this._type === 'number' &&
-        ![Block, Transaction, Subscription, Listen, MSG].includes(this._type)
-      ) {
-        throw new Error(INVALID_ARGUMENT_WITH_CS('type'))
-      }
-    }
 
     if (
       typeof this._addresses !== 'undefined' &&
@@ -168,7 +186,13 @@ export default class Message {
       throw new Error(INVALID_ARGUMENT_WITH_CS('signedAddresses'))
     }
 
-    if (typeof this._txTypes !== 'undefined' && this._txTypes.length) {
+    if (typeof this._txTypes !== 'undefined') {
+      if (
+        !Array.isArray(this._txTypes) ||
+        this._txTypes.length > TX_TYPE_LIST.length
+      )
+        throw new Error(INVALID_ARGUMENT_WITH_CS('tx_types'))
+
       for (let i = 0; i < this._txTypes.length; i++) {
         if (!TX_TYPE_LIST.includes(this._txTypes[i])) {
           throw new Error(INVALID_ARGUMENT_WITH_CS('tx_types'))
