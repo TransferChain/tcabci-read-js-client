@@ -1,4 +1,4 @@
-export const CLIENT_VERSION = '2.7.13',
+export const CLIENT_VERSION = '2.8.0',
   MAX_ADDRESSES = 251
 
 export function positiveInteger(value, name) {
