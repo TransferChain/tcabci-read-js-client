@@ -1,9 +1,8 @@
-import { Debug } from '@streetbyters/js-debug'
+import { CLIENT_VERSION, endpoint, positiveInteger } from './validation.js'
 
 export const HTTPSPort = 443,
-  HTTPPort = 80
-
-export const DefaultTimeout = 7000,
+  HTTPPort = 80,
+  DefaultTimeout = 7000,
   LongTimeout = DefaultTimeout * 2
 
 export class Options {
@@ -15,14 +14,17 @@ export class Options {
   _protocols = []
   _customWS
   _endpoints = ['ws', 'longpoll']
-  _version = `v2.7.12`
+  _version = CLIENT_VERSION
+  _allowInsecure = false
+  _maxMessageBytes = 16 * 1024 * 1024
+  _maxPendingCallbacks = 1000
 
   _maxConnectionDelay = 10000
   _minReconnectionDelay = 1000 + Math.random() * 4000
   _reconnectionDelayGrowFactor = 1.3
   _minUptime = 5000
   _maxRetries = 10
-  _maxEnqueuedMessages = Infinity
+  _maxEnqueuedMessages = 100
   _startClosed = false
   _debug = false
 
@@ -56,15 +58,36 @@ export class Options {
     if (this._timeout > LongTimeout)
       throw new Error(`timeout less than LongTimeout`)
 
-    // eslint-disable-next-line
-    try {
-      new URL(this.url)
+    positiveInteger(this._timeout, 'timeout')
+    endpoint(this.url, ['ws:', 'wss:'], this._allowInsecure)
 
-      return true
-    } catch (e) {
-      Debug.error(e)
-      throw e
-    }
+    return true
+  }
+
+  setAllowInsecure(value) {
+    this._allowInsecure = value === true
+
+    return this
+  }
+
+  setMaxMessageBytes(value) {
+    this._maxMessageBytes = positiveInteger(value, 'maxMessageBytes')
+
+    return this
+  }
+
+  get maxMessageBytes() {
+    return this._maxMessageBytes
+  }
+
+  setMaxPendingCallbacks(value) {
+    this._maxPendingCallbacks = positiveInteger(value, 'maxPendingCallbacks')
+
+    return this
+  }
+
+  get maxPendingCallbacks() {
+    return this._maxPendingCallbacks
   }
 
   /**
@@ -108,10 +131,10 @@ export class Options {
   }
 
   /**
-   * @return {Array<string>}
+   * @return {ReadonlyArray<string>}
    */
   get endpoints() {
-    return this._endpoints
+    return Object.freeze([...this._endpoints])
   }
 
   /**
@@ -204,7 +227,7 @@ export class Options {
    * @return {Options}
    */
   setMaxEnqueuedMessages(em) {
-    this._maxEnqueuedMessages = em
+    this._maxEnqueuedMessages = positiveInteger(em, 'maxEnqueuedMessages')
 
     return this
   }
@@ -222,18 +245,22 @@ export class Options {
    * @throws {TypeError}
    */
   setProtocols(protocols) {
-    if (!Array.isArray(protocols))
+    if (
+      !Array.isArray(protocols) ||
+      protocols.some((v) => typeof v !== 'string')
+    )
       throw new TypeError('protocols must be a Array')
-    this._protocols = protocols
+
+    this._protocols = [...protocols]
 
     return this
   }
 
   /**
-   * @return {Array<string>}
+   * @return {ReadonlyArray<string>}
    */
   get protocols() {
-    return this._protocols
+    return Object.freeze([...this._protocols])
   }
 
   /**
@@ -257,7 +284,9 @@ export class Options {
    * @return {string}
    */
   get url() {
-    if (this._host.length > 2 && this._host.slice(0, 2) === 'ws') {
+    if (typeof this._host !== 'string') throw new TypeError('Invalid host')
+
+    if (/^wss?:\/\//.test(this._host)) {
       return `${this._host}${![HTTPPort, HTTPSPort].includes(this._port) ? `:${this._port}` : ''}`
     }
 
@@ -278,7 +307,8 @@ export class Options {
       maxRetries: this._maxRetries,
       maxEnqueuedMessages: this._maxEnqueuedMessages,
       startClosed: this._startClosed,
-      debug: this._debug,
+      // ReconnectingWebSocket debug logs outgoing payloads. Never enable it.
+      debug: false,
       headers: {
         Client: `tcabaci-read-js-client/${this._version}`
       }

@@ -13,12 +13,26 @@ export declare const ALREADY_CONNECTED: ErrMessage,
   TRANSACTION_NOT_BROADCAST: ErrMessage
 
 export declare class FetchError extends Error {
-  code: number
-  response: Record<string, any>
+  readonly code: number
+  status: number
+  response?: Record<string, any>
   originError?: Error
+
   constructor(message: string)
+
   setStatus(status: number): FetchError
+
   setCode(code: number): FetchError
+
   setResponse(data: Record<string, any>): FetchError
+
   setOriginError(error: Error): FetchError
+}
+
+export declare class CopiedError extends Error {
+  originName: string
+  originError: Error
+  originStack?: string
+
+  constructor(err: Error)
 }

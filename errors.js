@@ -2,7 +2,7 @@ export const ALREADY_CONNECTED = 'Already connected',
   NOT_CONNECTED = 'Not connected',
   ERR_NETWORK = 'Network Error',
   INVALID_ARGUMENTS = 'Check your arguments',
-  INVALID_ARGUMENT_WITH_CS = val => {
+  INVALID_ARGUMENT_WITH_CS = (val) => {
     return INVALID_ARGUMENTS + ' ' + val
   },
   NOT_SUBSCRIBED = 'Not subscribed',
@@ -31,6 +31,10 @@ export class CopiedError extends Error {
 }
 
 export class FetchError extends Error {
+  get code() {
+    return this.status
+  }
+
   status = -1
   response
   originError

@@ -1,20 +1,20 @@
 import { describe, it, before } from 'mocha'
 import { expect } from 'chai'
-import { Options } from './websocketOptions.js'
+import { Options } from '../websocketOptions.js'
 import WebSocket from 'ws'
-import { TWebSocket } from './websocket.js'
+import { TWebSocket } from '../websocket.js'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 
 const waiter = (timeout = 100) => {
-  return new Promise(resolve => setTimeout(resolve, timeout))
+  return new Promise((resolve) => setTimeout(resolve, timeout))
 }
 
 let server,
   serverTwo,
   ws,
   wsTwo,
-  sendMessage = msg => {
+  sendMessage = (msg) => {
     ws.send(msg)
   },
   cameMessage = null
@@ -23,6 +23,7 @@ describe('WebSocket', () => {
   before(() => {
     server = createServer({})
     serverTwo = createServer({})
+
     const wss = new WebSocketServer({ server }),
       wssTwo = new WebSocketServer({ server: serverTwo })
 
@@ -110,6 +111,7 @@ describe('WebSocket', () => {
     await twSocket.connect()
     await waiter(50)
     expect(twSocket.ready).to.be.eq(true)
+
     let thw = null
 
     try {
@@ -314,7 +316,7 @@ describe('WebSocket', () => {
     options.setDebug(true)
 
     let came = null,
-      messageCb = msg => {
+      messageCb = (msg) => {
         came = msg.data
       }
 
@@ -390,7 +392,7 @@ describe('WebSocket', () => {
     options.setDebug(true)
 
     let came = null,
-      errorCb = e => {
+      errorCb = (e) => {
         came = e.error.code
       }
 
@@ -469,7 +471,7 @@ describe('WebSocket', () => {
     options.setDebug(true)
 
     let came = null,
-      closeCb = e => {
+      closeCb = (e) => {
         came = e
       }
 
@@ -482,7 +484,7 @@ describe('WebSocket', () => {
     await twSocket.connect()
     await waiter(50)
     expect(twSocket.ready).to.be.eq(true)
-    await twSocket.disconnect(1007)
+    await twSocket.disconnect(4007)
     await twSocket.disconnect()
   })
 
@@ -518,7 +520,7 @@ describe('WebSocket', () => {
     options.setDebug(true)
 
     let came = false,
-      closeCb = e => {
+      closeCb = (e) => {
         came = true
       }
 
