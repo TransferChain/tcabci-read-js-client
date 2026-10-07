@@ -1,6 +1,7 @@
 export class Bytea {
   #bytes
   #status
+
   constructor(bytes, status) {
     this.#bytes = bytes
     this.#status = status

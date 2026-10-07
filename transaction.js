@@ -1,5 +1,5 @@
 import { INVALID_ARGUMENT_WITH_CS } from './errors.js'
-import { Debug } from '@streetbyters/js-debug'
+import { cloneAndFreeze, rfc3339Timestamp } from './validation.js'
 
 export const TX_TYPE_MASTER = 'initial_storage',
   TX_TYPE_ADDRESS = 'interim_storage',
@@ -58,7 +58,8 @@ export const TX_TYPE_MASTER = 'initial_storage',
   TX_TYPE_COLLECTION_POLICY = 'coll_policy',
   TX_TYPE_DATAV2_COLLECTION = 'datav2_coll',
   TX_TYPE_DATAV2F = 'datav2F',
-  TX_TYPE_LIST = [
+  /** @type {ReadonlyArray<import('./transaction.js').TXType>} */
+  TX_TYPE_LIST = Object.freeze([
     TX_TYPE_MASTER,
     TX_TYPE_ADDRESS,
     TX_TYPE_ADDRESSES,
@@ -116,7 +117,7 @@ export const TX_TYPE_MASTER = 'initial_storage',
     TX_TYPE_COLLECTION_POLICY,
     TX_TYPE_DATAV2_COLLECTION,
     TX_TYPE_DATAV2F
-  ]
+  ])
 
 export class Transaction {
   _order
@@ -148,7 +149,7 @@ export class Transaction {
    * @param {string} sign
    * @param {number} fee
    * @param {string} hash
-   * @param {Date} inserted_at
+   * @param {string|number|Date} [inserted_at] Date text/RFC3339Nano, Unix milliseconds or Date.
    * @param {?string} additionalData
    * @param {?string} cipherData
    * @param {?string} chainName
@@ -182,10 +183,17 @@ export class Transaction {
     this._sign = sign
     this._fee = fee
     this._hash = hash
-    this._inserted_at = inserted_at
+    this._inserted_at =
+      typeof inserted_at === 'undefined'
+        ? undefined
+        : rfc3339Timestamp(inserted_at)
+
     if (additionalData) this._additionalData = additionalData
+
     if (cipherData) this._cipherData = cipherData
+
     if (chainName) this._chainName = chainName
+
     if (chainVersion) this._chainVersion = chainVersion
   }
 
@@ -217,14 +225,17 @@ export class Transaction {
     return this._recipient_addr
   }
 
+  /** @returns {import('./types.js').JSONValue} Factory data is a deeply frozen snapshot. */
   get Data() {
     return this._data
   }
 
+  /** @returns {import('./types.js').JSONValue|undefined} Factory data is a deeply frozen snapshot. */
   get AdditionalData() {
     return this._additionalData
   }
 
+  /** @returns {import('./types.js').JSONValue|undefined} Factory data is a deeply frozen snapshot. */
   get CipherData() {
     return this._cipherData
   }
@@ -241,8 +252,11 @@ export class Transaction {
     return this._hash
   }
 
+  /** @returns {Date|undefined} Detached Date converted from date text or Unix milliseconds. */
   get InsertedAt() {
-    return this._inserted_at
+    return typeof this._inserted_at !== 'undefined'
+      ? new Date(this._inserted_at)
+      : undefined
   }
 
   get ChainName() {
@@ -253,50 +267,19 @@ export class Transaction {
     return this._chainVersion
   }
 
+  /** @param {string} value @returns {import('./types.js').ParseResult<'transaction', Readonly<Transaction>>} */
   static FromJSON(value) {
     if (typeof value !== 'string')
-      return {
-        transaction: null,
-        error: new Error('invalid json payload')
-      }
+      return { transaction: null, error: new Error('Invalid transaction JSON') }
 
     try {
-      const parsed = JSON.parse(value),
-        tx = new Transaction()
-
-      if (typeof parsed.order !== 'undefined') tx._order = parsed.order
-      tx._id = parsed.id
-      tx._typ = parsed.typ
-      if (typeof parsed.identifier !== 'undefined')
-        tx._identifier = parsed.identifier
-      tx._height = parsed.height
-      tx._version = parsed.version
-      tx._sender_addr = parsed.sender_addr
-      tx._recipient_addr = parsed.recipient_addr
-      tx._data = parsed.data
-      if (typeof parsed.additional_data !== 'undefined')
-        tx._additionalData = parsed.additional_data
-      if (typeof parsed.cipher_data !== 'undefined')
-        tx._cipherData = parsed.cipher_data
-      tx._sign = parsed.sign
-      tx._fee = parsed.fee
-      tx._hash = parsed.hash
-      if (typeof parsed.inserted_at !== 'undefined')
-        tx._inserted_at = new Date(parsed.inserted_at)
-      if (typeof parsed.chain_name !== 'undefined')
-        this._chainName = parsed.chain_name
-      if (typeof parsed.chain_version !== 'undefined')
-        this._chainVersion = parsed.chain_version
-
-      tx.Validate()
-
-      return { transaction: tx, error: null }
-    } catch (e) {
-      Debug.error(e)
-      return { transaction: null, error: e }
+      return Transaction.FromObject(JSON.parse(value))
+    } catch {
+      return { transaction: null, error: new Error('Invalid transaction JSON') }
     }
   }
 
+  /** @param {Record<string, unknown>} obj @returns {import('./types.js').ParseResult<'transaction', Readonly<Transaction>>} */
   static FromObject(obj) {
     if (!obj)
       return {
@@ -308,33 +291,45 @@ export class Transaction {
       const tx = new Transaction()
 
       if (typeof obj.order !== 'undefined') tx._order = obj.order
+
       tx._id = obj.id
       tx._typ = obj.typ
-      if (typeof obj.identifier !== 'undefined') tx._identifier = obj.identifier
+
+      if (typeof obj.identifier !== 'undefined')
+        tx._identifier = cloneAndFreeze(obj.identifier)
+
       tx._height = obj.height
       tx._version = obj.version
       tx._sender_addr = obj.sender_addr
       tx._recipient_addr = obj.recipient_addr
-      tx._data = obj.data
+      tx._data = cloneAndFreeze(obj.data)
+
       if (typeof obj.additional_data !== 'undefined')
-        tx._additionalData = obj.additional_data
+        tx._additionalData = cloneAndFreeze(obj.additional_data)
+
       if (typeof obj.cipher_data !== 'undefined')
-        tx._cipherData = obj.cipher_data
+        tx._cipherData = cloneAndFreeze(obj.cipher_data)
+
       tx._sign = obj.sign
       tx._fee = obj.fee
       tx._hash = obj.hash
+
       if (typeof obj.inserted_at !== 'undefined')
-        tx._inserted_at = new Date(obj.inserted_at)
+        tx._inserted_at = rfc3339Timestamp(obj.inserted_at)
+
       if (typeof obj.chain_name !== 'undefined') tx._chainName = obj.chain_name
+
       if (typeof obj.chain_version !== 'undefined')
         tx._chainVersion = obj.chain_version
 
       tx.Validate()
 
-      return { transaction: tx, error: null }
-    } catch (e) {
-      Debug.error(e)
-      return { transaction: null, error: e }
+      return { transaction: Object.freeze(tx), error: null }
+    } catch {
+      return {
+        transaction: null,
+        error: new Error('Invalid transaction payload')
+      }
     }
   }
 
@@ -355,9 +350,9 @@ export class Transaction {
       data: this._data,
       sign: this._sign,
       fee: this._fee,
-      hash: this._hash,
-      ...(this._inserted_at
-        ? { inserted_at: this._inserted_at.toISOString() }
+      ...(typeof this._hash !== 'undefined' ? { hash: this._hash } : {}),
+      ...(typeof this._inserted_at !== 'undefined'
+        ? { inserted_at: new Date(this._inserted_at).toISOString() }
         : {}),
       ...(this._additionalData
         ? { additional_data: this._additionalData }
@@ -369,13 +364,13 @@ export class Transaction {
   }
 
   /**
-   * @return {Object<string, *>}
+   * @return {Readonly<Record<string, import('./types.js').JSONValue>>} Deeply frozen JSON snapshot.
    * @throws Error
    */
   ToObject() {
     this.Validate()
 
-    return {
+    return cloneAndFreeze({
       id: this._id,
       height: this._height,
       version: this._version,
@@ -385,9 +380,9 @@ export class Transaction {
       data: this._data,
       sign: this._sign,
       fee: this._fee,
-      hash: this._hash,
-      ...(this._inserted_at
-        ? { inserted_at: this._inserted_at.toISOString() }
+      ...(typeof this._hash !== 'undefined' ? { hash: this._hash } : {}),
+      ...(typeof this._inserted_at !== 'undefined'
+        ? { inserted_at: new Date(this._inserted_at).toISOString() }
         : {}),
       ...(this._additionalData
         ? { additional_data: this._additionalData }
@@ -395,37 +390,69 @@ export class Transaction {
       ...(this._cipherData ? { cipher_data: this._cipherData } : {}),
       ...(this._chainName ? { chain_name: this._chainName } : {}),
       ...(this._chainVersion ? { chain_version: this._chainVersion } : {})
-    }
+    })
   }
 
   Validate() {
-    if (typeof this._id === 'undefined')
+    if (
+      typeof this._order !== 'undefined' &&
+      (!Number.isSafeInteger(this._order) || this._order < 0)
+    )
+      throw new Error(INVALID_ARGUMENT_WITH_CS('order'))
+
+    if (typeof this._hash !== 'undefined' && typeof this._hash !== 'string')
+      throw new Error(INVALID_ARGUMENT_WITH_CS('hash'))
+
+    if (typeof this._id !== 'string' || !this._id.length)
       throw new Error(INVALID_ARGUMENT_WITH_CS('id'))
-    if (typeof this._height !== 'number')
+
+    if (!Number.isSafeInteger(this._height) || this._height < 0)
       throw new Error(INVALID_ARGUMENT_WITH_CS('height'))
-    if (typeof this._version !== 'number')
+
+    if (!Number.isSafeInteger(this._version) || this._version < 0)
       throw new Error(INVALID_ARGUMENT_WITH_CS('version'))
+
     if (typeof this._typ !== 'string')
       throw new Error(INVALID_ARGUMENT_WITH_CS('typ'))
+
     if (!TX_TYPE_LIST.includes(this._typ))
       throw new Error(INVALID_ARGUMENT_WITH_CS('typ'))
-    if (typeof this._sender_addr !== 'string')
+
+    if (
+      typeof this._sender_addr !== 'string' ||
+      !this._sender_addr.length ||
+      this._sender_addr.length > 2048
+    )
       throw new Error(INVALID_ARGUMENT_WITH_CS('senderAddr'))
-    if (typeof this._recipient_addr !== 'string')
+
+    if (
+      typeof this._recipient_addr !== 'string' ||
+      !this._recipient_addr.length ||
+      this._recipient_addr.length > 2048
+    )
       throw new Error(INVALID_ARGUMENT_WITH_CS('recipientAddr'))
+
     if (typeof this._data === 'undefined')
       throw new Error(INVALID_ARGUMENT_WITH_CS('data'))
-    if (typeof this._sign === 'undefined')
+
+    if (typeof this._sign !== 'string' || !this._sign.length)
       throw new Error(INVALID_ARGUMENT_WITH_CS('sign'))
-    if (typeof this._fee !== 'number')
+
+    if (!Number.isFinite(this._fee) || this._fee < 0)
       throw new Error(INVALID_ARGUMENT_WITH_CS('fee'))
-    if (this._inserted_at && !(this._inserted_at instanceof Date))
+
+    if (
+      typeof this._inserted_at !== 'undefined' &&
+      !Number.isFinite(this._inserted_at)
+    )
       throw new Error(INVALID_ARGUMENT_WITH_CS('insertedAt'))
+
     if (
       typeof this._chainName !== 'undefined' &&
       typeof this._chainName !== 'string'
     )
       throw new Error(INVALID_ARGUMENT_WITH_CS('chainName'))
+
     if (
       typeof this._chainVersion !== 'undefined' &&
       typeof this._chainVersion !== 'string'

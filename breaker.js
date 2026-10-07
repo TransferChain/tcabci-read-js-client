@@ -1,52 +1,55 @@
-import {
-  ConsecutiveBreaker,
-  ExponentialBackoff,
-  retry,
-  handleType,
-  circuitBreaker,
-  wrap
-} from 'cockatiel'
-import { FetchError } from './errors.js'
+import { ConsecutiveBreaker, handleType, circuitBreaker } from 'cockatiel'
+import { FetchError, ERR_NETWORK } from './errors.js'
+
+const retryable = (error) =>
+  error instanceof FetchError &&
+  ([502, 503, 504].includes(error.status) || error.message === ERR_NETWORK)
 
 export class Breaker {
-  _options = {
-    halfOpenAfter: 10 * 1000,
+  _circuitBreakerPolicy = circuitBreaker(handleType(FetchError, retryable), {
+    halfOpenAfter: 10000,
     breaker: new ConsecutiveBreaker(10)
-  }
-  _retryPolicy = retry(
-    handleType(FetchError, err => [502, 503, 504].includes(err.status)).orType(
-      Error,
-      err => {
-        return err.message.toLowerCase().search('failed to fetch') > -1
-      }
-    ),
-    {
-      maxAttempts: 10,
-      backoff: new ExponentialBackoff({
-        initialDelay: 500,
-        maxDelay: 15000
-      })
-    }
-  )
-  _circuitBreakerPolicy = circuitBreaker(
-    handleType(FetchError, err => [502, 503, 504].includes(err.status)).orType(
-      Error,
-      err => {
-        return err.message.toLowerCase().search('failed to fetch') > -1
-      }
-    ),
-    this._options
-  )
-  _retryWithBreaker = wrap(this._retryPolicy, this._circuitBreakerPolicy)
-  constructor() {}
+  })
 
   /**
-   * @param {function} fn
-   * @return {Promise<*>}
+   * @template T
+   * @param {function(): Promise<T>} fn
+   * @param {AbortSignal} [signal] Cancels retry backoff immediately.
+   * @param {boolean} [retry=true] Disable for non-idempotent writes.
+   * @returns {Promise<T>}
    */
-  execute(fn) {
-    return this._retryWithBreaker.execute(fn).catch(err => {
-      return Promise.reject(err)
-    })
+  async execute(fn, signal, retry = true) {
+    for (let attempt = 0; ; attempt++) {
+      signal?.throwIfAborted()
+
+      try {
+        return await this._circuitBreakerPolicy.execute(fn, signal)
+      } catch (error) {
+        if (!retry || attempt >= 3 || signal?.aborted || !retryable(error))
+          throw error
+
+        await this._delay(
+          Math.min(500 * 2 ** attempt, 15000) * (0.5 + Math.random()),
+          signal
+        )
+      }
+    }
+  }
+
+  async _delay(ms, signal) {
+    let timer, abort
+
+    try {
+      await new Promise((resolve, reject) => {
+        abort = () => reject(new FetchError('Request aborted'))
+        timer = setTimeout(resolve, ms)
+
+        if (signal?.aborted) abort()
+        else signal?.addEventListener('abort', abort, { once: true })
+      })
+    } finally {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', abort)
+    }
   }
 }

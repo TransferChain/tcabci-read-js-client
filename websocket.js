@@ -1,3 +1,4 @@
+import { byteLength, closeCode } from './validation.js'
 import { Options } from './websocketOptions.js'
 import ReconnectingWebSocket from 'reconnecting-websocket'
 
@@ -27,6 +28,9 @@ export class TWebSocket {
   _closeCallbacks = []
 
   _connectionErrorCount = 0
+  _timers = new Set()
+  _queuedMessages = 0
+  _queuedBytes = 0
 
   /**
    * @param {Options} options
@@ -44,43 +48,47 @@ export class TWebSocket {
   /**
    * @return {boolean}
    */
+  get active() {
+    return Boolean(this._client)
+  }
+
   get ready() {
     if (!this._client) return false
 
-    return this._client.readyState === WebSocket.OPEN
+    return this._client.readyState === 1
   }
 
   /**
-   * @return {Array<function>}
+   * @return {ReadonlyArray<function>}
    */
   get openListeners() {
-    return this._openCallbacks
+    return Object.freeze([...this._openCallbacks])
   }
 
   /**
-   * @return {Array<function>}
+   * @return {ReadonlyArray<function>}
    */
   get messageListeners() {
-    return this._messageCallbacks
+    return Object.freeze([...this._messageCallbacks])
   }
 
   /**
-   * @return {Array<function>}
+   * @return {ReadonlyArray<function>}
    */
   get errorListeners() {
-    return this._errorCallbacks
+    return Object.freeze([...this._errorCallbacks])
   }
 
   /**
-   * @return {Array<function>}
+   * @return {ReadonlyArray<function>}
    */
   get closeListeners() {
-    return this._closeCallbacks
+    return Object.freeze([...this._closeCallbacks])
   }
 
   /**
    * @param {?boolean} force
-   * @return {Awaited<TWebSocket>}
+   * @return {Promise<TWebSocket>}
    * @throws {Error}
    */
   async connect(force = false) {
@@ -92,31 +100,57 @@ export class TWebSocket {
 
   /**
    * @param {?number} code
-   * @return {Awaited<TWebSocket>}
+   * @return {Promise<TWebSocket>}
    * @throws {Error}
    */
   async reconnect(code = null) {
-    await this._disconnect(code)
-    this._init(true)
+    this._close(code)
+    await this._init(true)
 
     return this
   }
 
   /**
-   * @param {number} code
-   * @return {Promise<void>}
+   * Close every socket state, clear queued callbacks and release references.
+   * @param {number} [code=1000]
+   * @returns {Promise<void>}
    */
   async disconnect(code = 1000) {
     return this._disconnect(code)
   }
 
   /**
+   * Send a bounded message. Offline binary buffers are rejected, not retained.
    * @param {string|ArrayBuffer|Blob|ArrayBufferView} msg
+   * @returns {void}
    */
   send(msg) {
-    if (!this._client) return
+    if (!this._client) throw new Error('Not connected')
+
+    const size = byteLength(msg)
+
+    if (size > this._options.maxMessageBytes)
+      throw new Error('Message exceeds limit')
+
+    if (!this.ready && typeof msg !== 'string')
+      throw new Error('Binary messages require an open connection')
+
+    if (this.ready) {
+      if (this._client.bufferedAmount + size > this._options.maxMessageBytes)
+        throw new Error('Outgoing buffer exceeds byte limit')
+    } else if (
+      this._queuedMessages >= this._options.maxEnqueuedMessages ||
+      this._queuedBytes + size > this._options.maxMessageBytes
+    ) {
+      throw new Error('Outgoing queue exceeds limit')
+    }
 
     this._client.send(msg)
+
+    if (!this.ready) {
+      this._queuedMessages++
+      this._queuedBytes += size
+    }
   }
 
   /**
@@ -194,10 +228,12 @@ export class TWebSocket {
    * @private
    */
   _addListener(name, callback) {
+    if (typeof callback !== 'function') throw new TypeError('Invalid callback')
+
     if (this[name].length >= MaxListenerSize)
       throw new Error(`listener size must be ${MaxListenerSize}`)
 
-    if (this[name].findIndex(v => v === callback) > -1) return this
+    if (this[name].findIndex((v) => v === callback) > -1) return this
 
     this[name].push(callback)
 
@@ -210,7 +246,7 @@ export class TWebSocket {
    * @private
    */
   _removeListener(name, callback) {
-    const idx = this[name].findIndex(v => v === callback)
+    const idx = this[name].findIndex((v) => v === callback)
 
     if (idx > -1) {
       this[name].splice(idx, 1)
@@ -222,30 +258,43 @@ export class TWebSocket {
   _callListener(name, value) {
     if (!this[name]) return
 
+    if (
+      this._timers.size + this[name].length >
+      this._options.maxPendingCallbacks
+    ) {
+      this._fail(4008)
+
+      return
+    }
+
     for (const callback of this[name]) {
-      setTimeout(
-        (callback, value) => {
+      const timer = setTimeout(() => {
+        this._timers.delete(timer)
+
+        if (!this[name].includes(callback)) return
+
+        try {
           callback(value)
-        },
-        0,
-        callback,
-        value
-      )
+        } catch {
+          if (name !== '_errorCallbacks')
+            this._onError(new Error('Callback failed'))
+        }
+      }, 0)
+
+      this._timers.add(timer)
     }
   }
 
   /**
    * @private
    * @param {?boolean} force
-   * @return {Awaited<TWebSocket>}
+   * @return {Promise<TWebSocket>}
    * @throws {Error}
    */
   async _init(force = false) {
-    if (!force && this.ready) return this
+    if (!force && this._client) return this
 
-    if (this.ready) {
-      await this.disconnect(1000)
-    }
+    if (this._client) this._close(1000)
 
     this._make()
 
@@ -261,32 +310,36 @@ export class TWebSocket {
       this._options.make()
     )
 
-    this._openListener = e => {
+    this._openListener = (e) => {
+      this._queuedMessages = 0
+      this._queuedBytes = 0
       this._connectionErrorCount = 0
       this._onOpen(e)
     }
     this._client.addEventListener('open', this._openListener)
 
-    this._closeListener = e => {
+    this._closeListener = (e) => {
       this._onClose(e)
     }
     this._client.addEventListener('close', this._closeListener)
 
-    this._messageListener = e => {
+    this._messageListener = (e) => {
       this._onMessage(e)
     }
     this._client.addEventListener('message', this._messageListener)
 
-    this._errorListener = e => {
+    this._errorListener = (e) => {
       this._onError(e)
+
       if (this._connectionErrorCount > 15) {
         this._onError(new Error('Internet connectivity problem!'))
-        this._disconnect().catch(err => {
+        this._disconnect().catch((err) => {
           this._onError(err)
         })
 
         return
       }
+
       this._connectionErrorCount++
     }
     this._client.addEventListener('error', this._errorListener)
@@ -298,18 +351,39 @@ export class TWebSocket {
    * @return {Promise<void>}
    */
   async _disconnect(code = 1000) {
-    if (!this.ready) return
-
     this._close(code)
   }
 
-  _close(code = 1000) {
-    if (!code) code = 1000
+  _fail(code) {
+    const callbacks = [...this._closeCallbacks]
 
-    this._client.removeEventListener('open', this._openListener)
-    this._client.removeEventListener('close', this._closeListener)
-    this._client.removeEventListener('message', this._messageListener)
-    this._client.removeEventListener('error', this._errorListener)
+    this._close(code)
+
+    for (const callback of callbacks) {
+      try {
+        callback({ code, reason: 'Connection limit exceeded', wasClean: false })
+      } catch {
+        /* No payload logging. */
+      }
+    }
+  }
+
+  _close(code = 1000) {
+    code = closeCode(code)
+    this._queuedMessages = 0
+    this._queuedBytes = 0
+
+    for (const timer of this._timers) clearTimeout(timer)
+
+    this._timers.clear()
+
+    const client = this._client
+
+    this._client = undefined
+    client?.removeEventListener('open', this._openListener)
+    client?.removeEventListener('close', this._closeListener)
+    client?.removeEventListener('message', this._messageListener)
+    client?.removeEventListener('error', this._errorListener)
 
     this._openCallbacks.length = 0
     this._errorCallbacks.length = 0
@@ -318,10 +392,10 @@ export class TWebSocket {
 
     this._openListener = () => {}
     this._closeListener = () => {}
-    this._closeListener = () => {}
+    this._errorListener = () => {}
     this._messageListener = () => {}
 
-    this._client.close(code)
+    client?.close(code)
     this._connectionErrorCount = 0
   }
 
@@ -346,6 +420,18 @@ export class TWebSocket {
    * @private
    */
   _onMessage(msg) {
+    try {
+      if (byteLength(msg.data) > this._options.maxMessageBytes) {
+        this._fail(4009)
+
+        return
+      }
+    } catch {
+      this._fail(4003)
+
+      return
+    }
+
     this._callListener('_messageCallbacks', msg)
   }
 

@@ -1,3 +1,7 @@
 export declare class Breaker {
-  execute(fn: () => Promise<any>): Promise<any>
+  execute<T>(
+    fn: () => Promise<T>,
+    signal?: AbortSignal,
+    retry?: boolean
+  ): Promise<T>
 }
