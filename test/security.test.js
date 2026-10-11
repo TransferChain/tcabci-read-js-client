@@ -5,7 +5,6 @@ import { once } from 'node:events'
 import { WebSocketServer, WebSocket } from 'ws'
 import Client from '../client.js'
 import { HTTP } from '../http.js'
-import { Breaker } from '../breaker.js'
 import { TWebSocket } from '../websocket.js'
 import { Options } from '../websocketOptions.js'
 import Message from '../message.js'
@@ -176,6 +175,7 @@ test('Message ACK, block and transaction envelopes dispatch correctly', () => {
     observed = []
 
   c.SetListenCallback((...args) => observed.push(args))
+  c._setSubscribeAddresses(['dummy-address'])
   c._callListenCallback('{"type":2,"state":1}')
   assert.equal(c.IsSubscribed(), true)
   c._callListenCallback(
@@ -865,4 +865,24 @@ test('date conversion accepts RFC3339Nano, Unix milliseconds and Date without st
   assert.equal(direct.InsertedAt.valueOf(), 0)
   assert.equal(callerDate.valueOf(), 1000)
   assert.equal(new Transaction().InsertedAt, undefined)
+})
+
+test('HTTP requests retain the client version header', async () => {
+  const { CLIENT_VERSION } = await import('../constants.js')
+
+  await withFetch(
+    async (url, options) => {
+      assert.equal(
+        options.headers.get('Client'),
+        `tcabci-read-js-client/${CLIENT_VERSION}`
+      )
+
+      return json({ success: true, data: [] })
+    },
+    async () => {
+      await new HTTP('https://dummy.invalid').request('/v1/blocks', {
+        method: 'GET'
+      })
+    }
+  )
 })
