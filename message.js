@@ -9,6 +9,7 @@ import {
 
 export const SUBSCRIBEMessage = 'subscribe',
   UNSUBSCRIBEMessage = 'unsubscribe',
+  LISTENMessage = 'listen',
   Block = 0,
   Transaction = 1,
   Subscription = 2,
@@ -163,6 +164,7 @@ export default class Message {
       ![
         SUBSCRIBEMessage,
         UNSUBSCRIBEMessage,
+        LISTENMessage,
         Block,
         Transaction,
         Subscription,

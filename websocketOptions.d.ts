@@ -1,3 +1,4 @@
+import type { WSAuthorityOptions } from './authority.js'
 import { WebSocketConstructor } from './types.js'
 
 export declare type Timeout = number
@@ -70,6 +71,8 @@ export declare class Options {
   setCustomWS(customWS: WebSocketConstructor): Options
 
   get customWS(): WebSocketConstructor | undefined
+
+  setAuthority(authority: WSAuthorityOptions | null): this
 
   get url(): string
 
