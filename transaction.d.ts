@@ -1,4 +1,5 @@
 import { JSONValue, ParseResult } from './types.js'
+import { ByteaJSON } from './bytea.js'
 
 export type TXType =
   | 'initial_storage'
@@ -126,7 +127,7 @@ export interface TransactionInput {
   sender_addr: string
   recipient_addr: string
   data: JSONValue
-  sign: string
+  sign: string | ByteaJSON
   fee: number
   hash?: string
   /** Date text/RFC3339Nano, Unix milliseconds or a caller-owned Date. */
@@ -161,7 +162,7 @@ export declare class Transaction {
 
   get CipherData(): JSONValue | undefined
 
-  get Sign(): string
+  get Sign(): string | ByteaJSON
 
   get Fee(): number
 
