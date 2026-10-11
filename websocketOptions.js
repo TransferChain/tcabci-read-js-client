@@ -342,7 +342,7 @@ export class Options {
         constructor(url, protocols) {
           const authority = options._authority
 
-          if (requiresAuthority && !authority)
+          if (requiresAuthority && !authority
             throw new Error('Websocket authority configuration released')
 
           super(url, protocols, {
