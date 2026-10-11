@@ -4,7 +4,7 @@ import { generateKeyPairSync, sign, verify } from 'node:crypto'
 import { createWSAuthorityV3 } from '../authority.js'
 import { Options } from '../websocketOptions.js'
 import Client from '../client.js'
-import { CLIENT_VERSION } from '../validation.js'
+import { CLIENT_VERSION } from '../constants.js'
 
 const pair = generateKeyPairSync('ed25519'),
   address = 'dummyAuthorityAddress'
@@ -256,10 +256,12 @@ test('Listen is explicit and a rejection stops retries', async () => {
     sent = []
 
   client._setConnected(true)
+  client._clientInstanceID = 'a'.repeat(128)
   client._ws = { send: (value) => sent.push(JSON.parse(value)) }
   assert.equal(sent.length, 0)
   client.Listen()
   assert.equal(sent[0].type, 'listen')
+  assert.equal(sent[0].client_instance_id, client._clientInstanceID)
   assert.equal(client._listenRequested, true)
 
   let rejected = false,
@@ -288,6 +290,7 @@ test('Client repeats explicit Listen after reconnect and stops on rejection', as
     server = createServer(),
     sockets = new WebSocketServer({ server }),
     signatures = [],
+    instanceIDs = [],
     nonces = new Set()
   let connections = 0,
     listenCount = 0,
@@ -309,6 +312,8 @@ test('Client repeats explicit Listen after reconnect and stops on rejection', as
 
       raw.fill(0)
       assert.equal(message.type, 'listen')
+      assert.match(message.client_instance_id, /^[0-9a-f]{128}$/)
+      instanceIDs.push(message.client_instance_id)
       listenCount++
 
       if (listenCount === 1) {
@@ -367,6 +372,7 @@ test('Client repeats explicit Listen after reconnect and stops on rejection', as
     await new Promise((resolve) => setTimeout(resolve, 100))
     assert.equal(connections, 2)
     assert.equal(listenCount, 2)
+    assert.equal(instanceIDs[0], instanceIDs[1])
     assert.equal(client._listenRequested, false)
   } finally {
     clearTimeout(timer)
@@ -389,6 +395,7 @@ test('successive subscriptions retain proofs and unsubscribe ACK stays cleared',
 
   client._setConnected(true)
   client._ws = { send: (value) => sent.push(JSON.parse(value)) }
+  client._clientInstanceID = 'a'.repeat(128)
   client.Subscribe(['a'], first).Subscribe(['b'], second)
   assert.deepEqual(sent[1].addresses, ['a', 'b'])
   assert.deepEqual(sent[1].signed_addresses, {
@@ -462,5 +469,247 @@ test('anonymous Node WS sends client version on initial handshake and reconnect'
 
     await new Promise((resolve) => sockets.close(resolve))
     await new Promise((resolve) => server.close(resolve))
+  }
+})
+
+test('subscription instance ID uses SDK passKey vector and clears owned bytes on success and failures', async () => {
+  const { passKey } = await import('../passKey.js'),
+    original = Object.getOwnPropertyDescriptor(globalThis, 'crypto'),
+    entropyViews = [],
+    asciiViews = [],
+    digestViews = [],
+    { createHash } = await import('node:crypto')
+  let failEntropy = false,
+    failDigest = false
+
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: {
+      getRandomValues(bytes) {
+        entropyViews.push(bytes)
+        bytes.forEach((_, index) => {
+          bytes[index] = index
+        })
+        if (failEntropy) throw new Error('dummy entropy failure')
+        return bytes
+      },
+      subtle: {
+        async digest(algorithm, bytes) {
+          assert.equal(algorithm, 'SHA-512')
+          asciiViews.push(bytes)
+          assert.equal(bytes.length, 144)
+          assert.match(new TextDecoder().decode(bytes), /^[0-9a-f-]+$/)
+          await Promise.resolve()
+          assert.ok(
+            bytes.some((byte) => byte !== 0),
+            'ASCII cleared before digest finished'
+          )
+          if (failDigest) throw new Error('dummy digest failure')
+          const result = Uint8Array.from(
+            createHash('sha512').update(bytes).digest()
+          )
+          digestViews.push(result)
+          return result.buffer
+        }
+      }
+    }
+  })
+  try {
+    assert.equal(
+      await passKey(),
+      'bf36678648f39d67892be9fa74144d31c295bcb577a96e2f8459d8a3f89bd665f1822d3ed52fcdaecb4073e6701d49c557c051321a3279365611ed18efc15736'
+    )
+    const parallel = await Promise.all([passKey(), passKey()])
+    assert.equal(parallel[0], parallel[1])
+    assert.notEqual(entropyViews[1], entropyViews[2])
+    failDigest = true
+    await assert.rejects(passKey())
+    failDigest = false
+    failEntropy = true
+    await assert.rejects(passKey())
+    for (const bytes of [...entropyViews, ...asciiViews, ...digestViews])
+      assert.ok(
+        bytes.every((byte) => byte === 0),
+        'Owned passKey buffer retained'
+      )
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', original)
+  }
+})
+
+test('wire subscription instance ID survives reconnect and differs for equal-address clients', async () => {
+  const { createServer } = await import('node:http'),
+    { WebSocketServer, WebSocket } = await import('ws'),
+    { once } = await import('node:events'),
+    server = createServer(),
+    sockets = new WebSocketServer({ server }),
+    seen = []
+  let resolveMessages
+  const received = new Promise((resolve) => {
+    resolveMessages = resolve
+  })
+
+  sockets.on('connection', (socket) => {
+    socket.on('message', (raw) => {
+      const message = JSON.parse(raw.toString())
+      raw.fill(0)
+      assert.equal(message.type, 'subscribe')
+      assert.match(message.client_instance_id, /^[0-9a-f]{128}$/)
+      seen.push(message)
+      if (seen.length === 1) socket.terminate()
+      if (seen.length === 3) resolveMessages()
+    })
+  })
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const base = `127.0.0.1:${server.address().port}`,
+    first = new Client(
+      [`http://${base}`, `ws://${base}`],
+      WebSocket,
+      null,
+      null,
+      { allowInsecure: true }
+    ),
+    second = new Client(
+      [`http://${base}`, `ws://${base}`],
+      WebSocket,
+      null,
+      null,
+      { allowInsecure: true }
+    )
+  let secondStarted = false
+  first.SetSuccessCallback(() => {
+    first.Subscribe(['same-address'], { 'same-address': 'dummy-proof' })
+    if (seen.length >= 1 && !secondStarted) {
+      secondStarted = true
+      void second.Start()
+    }
+  })
+  second.SetSuccessCallback(() =>
+    second.Subscribe(['same-address'], { 'same-address': 'dummy-proof' })
+  )
+  let timer
+  try {
+    await first.Start()
+    await Promise.race([
+      received,
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('subscription reconnect timeout')),
+          5000
+        )
+      })
+    ])
+    assert.equal(
+      seen.filter(
+        (message) => message.client_instance_id === first._clientInstanceID
+      ).length,
+      2
+    )
+    assert.equal(
+      seen.filter(
+        (message) => message.client_instance_id === second._clientInstanceID
+      ).length,
+      1
+    )
+    assert.notEqual(first._clientInstanceID, second._clientInstanceID)
+  } finally {
+    clearTimeout(timer)
+    await first.Dispose()
+    await second.Dispose()
+    for (const socket of sockets.clients) socket.terminate()
+    await new Promise((resolve) => sockets.close(resolve))
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
+test('Stop during passKey generation prevents stale connection and later Start shares identity', async () => {
+  const { TWebSocket } = await import('../websocket.js'),
+    { createHash } = await import('node:crypto'),
+    descriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto'),
+    originalConnect = TWebSocket.prototype.connect,
+    client = new Client([], DummyWS)
+  let release,
+    entropyCalls = 0,
+    connections = 0
+
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: {
+      getRandomValues(bytes) {
+        entropyCalls++
+        bytes.fill(7)
+        return bytes
+      },
+      subtle: {
+        digest(_algorithm, ascii) {
+          return new Promise((resolve) => {
+            release = () =>
+              resolve(
+                Uint8Array.from(createHash('sha512').update(ascii).digest())
+                  .buffer
+              )
+          })
+        }
+      }
+    }
+  })
+  TWebSocket.prototype.connect = async function () {
+    connections++
+    return this
+  }
+  try {
+    const first = client.Start(),
+      shared = client.Start()
+    await client.Stop()
+    const next = client.Start()
+    release()
+    await Promise.all([first, shared, next])
+    assert.equal(entropyCalls, 1)
+    assert.equal(connections, 1)
+    assert.match(client._clientInstanceID, /^[0-9a-f]{128}$/)
+    assert.equal(client._instanceIDPromise, null)
+  } finally {
+    await client.Dispose()
+    TWebSocket.prototype.connect = originalConnect
+    Object.defineProperty(globalThis, 'crypto', descriptor)
+  }
+})
+
+test('failed passKey initialization allows retry without opening a socket', async () => {
+  const { TWebSocket } = await import('../websocket.js'),
+    descriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto'),
+    originalCrypto = globalThis.crypto,
+    originalConnect = TWebSocket.prototype.connect,
+    client = new Client([], DummyWS)
+  let attempts = 0,
+    connections = 0
+
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: {
+      getRandomValues(bytes) {
+        attempts++
+        if (attempts === 1) throw new Error('dummy entropy failure')
+        return originalCrypto.getRandomValues(bytes)
+      },
+      subtle: originalCrypto.subtle
+    }
+  })
+  TWebSocket.prototype.connect = async function () {
+    connections++
+    return this
+  }
+  try {
+    await assert.rejects(client.Start(), /Connection failed/)
+    assert.equal(connections, 0)
+    assert.equal(client._instanceIDPromise, null)
+    await client.Start()
+    assert.equal(attempts, 2)
+    assert.equal(connections, 1)
+  } finally {
+    await client.Dispose()
+    TWebSocket.prototype.connect = originalConnect
+    Object.defineProperty(globalThis, 'crypto', descriptor)
   }
 })
