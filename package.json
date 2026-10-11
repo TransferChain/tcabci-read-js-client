@@ -26,7 +26,8 @@
     "websocket.js",
     "websocketOptions.js",
     "bytea.js",
-    "validation.js"
+    "validation.js",
+    "authority.js"
   ],
   "type": "module",
   "main": "client.js",

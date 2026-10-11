@@ -1,3 +1,4 @@
+import { createWSAuthorityV3 } from './authority.js'
 import { CLIENT_VERSION, endpoint, positiveInteger } from './validation.js'
 
 export const HTTPSPort = 443,
@@ -13,6 +14,7 @@ export class Options {
   _longpoll = false
   _protocols = []
   _customWS
+  _authority = null
   _endpoints = ['ws', 'longpoll']
   _version = CLIENT_VERSION
   _allowInsecure = false
@@ -281,6 +283,37 @@ export class Options {
   }
 
   /**
+   * Configure a synchronous v3 signer. Requires a Node ws-compatible constructor
+   * supporting handshake headers; browser WebSocket cannot send these headers.
+   * @param {import('./authority.js').WSAuthorityOptions|null} authority
+   * @returns {Options}
+   */
+  setAuthority(authority) {
+    if (authority === null) {
+      this._authority = null
+
+      return this
+    }
+
+    if (
+      !authority ||
+      typeof authority.address !== 'string' ||
+      authority.address.length === 0 ||
+      authority.address.length > 2048 ||
+      /[;\r\n]/.test(authority.address) ||
+      typeof authority.sign !== 'function' ||
+      typeof this._customWS?.prototype?.on !== 'function'
+    )
+      throw new TypeError(
+        'Authority requires a Node ws-compatible constructor and signer'
+      )
+
+    this._authority = { address: authority.address, sign: authority.sign }
+
+    return this
+  }
+
+  /**
    * @return {string}
    */
   get url() {
@@ -297,8 +330,35 @@ export class Options {
    * @return {{WebSocket: ?any, maxReconnectionDelay: number, minReconnectionDelay: number, reconnectionDelayGrowFactor: number, minUptime: number, connectionTimeout: number, maxRetries: number, maxEnqueuedMessages: number, startClosed: boolean, debug: boolean }}
    */
   make() {
+    let WS = this._customWS
+
+    if (this._authority) {
+      const Base = WS,
+        options = this
+
+      WS = class extends Base {
+        constructor(url, protocols) {
+          const authority = options._authority
+
+          if (!authority)
+            throw new Error('Websocket authority configuration released')
+
+          super(url, protocols, {
+            followRedirects: false,
+            headers: {
+              Client: `tcabci-read-js-client/${CLIENT_VERSION}`,
+              'X-Authority': createWSAuthorityV3(
+                authority.address,
+                authority.sign
+              )
+            }
+          })
+        }
+      }
+    }
+
     return {
-      ...(this._customWS ? { WebSocket: this._customWS } : {}),
+      ...(WS ? { WebSocket: WS } : {}),
       maxReconnectionDelay: this._maxConnectionDelay,
       minReconnectionDelay: this._minReconnectionDelay,
       reconnectionDelayGrowFactor: this._reconnectionDelayGrowFactor,

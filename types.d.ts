@@ -1,3 +1,5 @@
+import type { WSAuthorityOptions } from './authority.js'
+
 /** Immutable JSON snapshot; byte buffers are not JSON values. */
 export type JSONValue =
   | null
@@ -19,6 +21,7 @@ export interface RequestOptions {
 }
 
 export interface ClientOptions {
+  authority?: WSAuthorityOptions
   allowInsecure?: boolean
   timeoutMs?: number
   maxResponseBytes?: number

@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
 
-  "ignorePatterns": ["**/node_modules/", "dist/", "*_test.js"],
+  "ignorePatterns": ["**/node_modules/", "dist/", "*_test.js", "test/"],
 
   "options": {
     "maxWarnings": 10

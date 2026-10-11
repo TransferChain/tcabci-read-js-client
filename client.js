@@ -1,3 +1,4 @@
+export { createWSAuthorityV3 } from './authority.js'
 import {
   addresses as validateAddresses,
   signedData as validateSignedData,
@@ -21,6 +22,8 @@ import Message, {
   Transaction as MTransaction,
   SUBSCRIBEMessage,
   UNSUBSCRIBEMessage,
+  LISTENMessage,
+  Listen as MListen,
   Subscription,
   OK
 } from './message.js'
@@ -63,6 +66,7 @@ export default class TCaBCIClient {
   _subscribed = false
   _subscribedAddresses = []
   _SubscribedSignedData = {}
+  _listenRequested = false
   _connected = false
   _chainName = 'transferchain'
   _chainVersion = 'v1'
@@ -135,10 +139,14 @@ export default class TCaBCIClient {
       ).href
     }
 
+    this._isWeb = true
     this._httpClient = new HTTP(this._readNodeAddress, options)
     this._options = new Options(this._readNodeWSAddress)
       .setAllowInsecure(options.allowInsecure)
       .setCustomWS(this._wsLibrary)
+
+    if (typeof options.authority !== 'undefined')
+      this._options.setAuthority(options.authority)
 
     if (typeof options.maxMessageBytes !== 'undefined')
       this._options.setMaxMessageBytes(options.maxMessageBytes)
@@ -152,6 +160,11 @@ export default class TCaBCIClient {
     if (chainName) this._chainName = chainName
 
     if (chainVersion) this._chainVersion = chainVersion
+  }
+
+  SetIsWeb(isWeb) {
+    this._isWeb = isWeb
+    return isWeb
   }
 
   SetDebug(debug) {
@@ -268,6 +281,7 @@ export default class TCaBCIClient {
    * @returns {Promise<TCaBCIClient>}
    */
   async Stop(code = 1000) {
+    this._listenRequested = false
     this._httpClient.abort()
     await this._disconnect(code)
     this._setConnected(false)
@@ -287,6 +301,22 @@ export default class TCaBCIClient {
       connected: this._connected,
       subscribed: this._subscribed
     })
+  }
+
+  /**
+   * Explicitly request privileged Listen with a configured authority handshake.
+   * The request is repeated after reconnect. Rejection stops automatic retries.
+   * @returns {TCaBCIClient}
+   */
+  Listen() {
+    if (!this.IsConnected()) throw new Error(NOT_CONNECTED)
+
+    this._ws.send(
+      new Message({ isWeb: this._isWeb, type: LISTENMessage }).ToJSON()
+    )
+    this._listenRequested = true
+
+    return this
   }
 
   /**
@@ -325,6 +355,7 @@ export default class TCaBCIClient {
         txTypes
       }).ToJSON()
     )
+    this._listenRequested = false
     this._setSubscribeAddresses(addrs)._setSubscribeSignedData(proof)
 
     return this
@@ -334,7 +365,7 @@ export default class TCaBCIClient {
    * @return {TCaBCIClient}
    */
   Unsubscribe() {
-    if (!this.IsSubscribed()) {
+    if (!this.IsSubscribed() && !this._listenRequested) {
       throw new Error(NOT_SUBSCRIBED)
     }
 
@@ -347,6 +378,7 @@ export default class TCaBCIClient {
         }).ToJSON()
       )
     } finally {
+      this._listenRequested = false
       this._clearSubscription()
     }
 
@@ -820,6 +852,9 @@ export default class TCaBCIClient {
       if (!current()) return
 
       this._setConnected(true)
+
+      if (this._listenRequested) this.Listen()
+
       this._callSuccessCallback(e)
     })
     ws.addMessageListener((message) => {
@@ -878,6 +913,7 @@ export default class TCaBCIClient {
    */
   async Dispose() {
     await this.Stop()
+    this._options.setAuthority(null)
     this._successCb = null
     this._errorCb = null
     this._closeCb = null
@@ -980,6 +1016,17 @@ export default class TCaBCIClient {
           }
 
           if (this._listenCb) this._listenCb(null, msg.transaction, null)
+
+          break
+        case MListen:
+          if (_msg.State !== OK) {
+            void this.Stop().catch(() => {})
+            this._callErrorCallback(new Error('Listen rejected'))
+
+            return
+          }
+
+          if (this._listenCb) this._listenCb(null, null, _msg)
 
           break
         case Subscription:
