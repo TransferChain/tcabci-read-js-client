@@ -1,7 +1,15 @@
 import { TXType } from './transaction.js'
 import { JSONValue, ParseResult } from './types.js'
 
-export type MessageType = 'subscribe' | 'unsubscribe' | 0 | 1 | 2 | 3 | 4
+export type MessageType =
+  | 'subscribe'
+  | 'unsubscribe'
+  | 'listen'
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
 
 export type MType = 0 | 1 | 2 | 3 | 4
 
@@ -9,6 +17,7 @@ export type MState = 1 | 2
 
 export declare const SUBSCRIBEMessage: 'subscribe',
   UNSUBSCRIBEMessage: 'unsubscribe',
+  LISTENMessage: 'listen',
   Block: 0,
   Transaction: 1,
   Subscription: 2,

@@ -1,3 +1,5 @@
+export { createWSAuthorityV3 } from './authority.js'
+export type { WSAuthoritySigner, WSAuthorityOptions } from './authority.js'
 import { Transaction, TXType } from './transaction.js'
 import { TWebSocket } from './websocket.js'
 import {
@@ -71,6 +73,7 @@ export default class TCaBCIClient {
     options?: ClientOptions
   )
 
+  SetIsWeb(isWeb: boolean): this
   SetDebug(debug: boolean): this
 
   SetSuccessCallback(cb: SuccessCallback | null): this
@@ -108,6 +111,9 @@ export default class TCaBCIClient {
     signedData: Readonly<Record<string, string>>,
     txTypes?: readonly TXType[] | null
   ): this
+
+  /** Explicit Listen; requires a valid authority and repeats after reconnect. */
+  Listen(): this
 
   Unsubscribe(): this
 
