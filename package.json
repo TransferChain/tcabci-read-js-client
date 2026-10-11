@@ -1,6 +1,6 @@
 {
   "name": "@tchain/tcabci-read-js-client",
-  "version": "2.8.3",
+  "version": "2.8.4",
   "description": "TransferChain Fastest Read Network WebSocket Client",
   "homepage": "https://github.com/TransferChain/tcabci-read-js-client#readme",
   "bugs": {
@@ -21,6 +21,7 @@
     "client.js",
     "errors.js",
     "message.js",
+    "passKey.js",
     "transaction.js",
     "util.js",
     "websocket.js",
