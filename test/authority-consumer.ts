@@ -20,3 +20,15 @@ options.setAuthority(null)
 void header
 client.Listen()
 void client
+
+import Message from '../message.js'
+import { passKey } from '../passKey.js'
+
+const instance: Promise<string> = passKey(),
+  subscription = new Message({
+    type: 'subscribe',
+    clientInstanceID: 'a'.repeat(128)
+  })
+
+void instance
+void subscription
