@@ -34,6 +34,7 @@ export default class Message {
     signedData?: Readonly<Record<string, string>> | null
     txTypes?: readonly TXType[] | null
     data?: JSONValue
+    clientInstanceID?: string
   })
 
   get IsWeb(): boolean | undefined
