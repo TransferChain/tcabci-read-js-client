@@ -21,6 +21,7 @@
     "client.js",
     "errors.js",
     "message.js",
+    "passKey.js",
     "transaction.js",
     "util.js",
     "websocket.js",
