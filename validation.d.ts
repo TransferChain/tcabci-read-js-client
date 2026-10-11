@@ -1,6 +1,6 @@
 import { JSONValue } from './types.js'
 
-export declare const CLIENT_VERSION: string, MAX_ADDRESSES: number
+export declare const MAX_ADDRESSES: number
 
 export declare function positiveInteger(value: number, name: string): number
 
