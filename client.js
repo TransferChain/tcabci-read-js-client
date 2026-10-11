@@ -181,6 +181,15 @@ export default class TCaBCIClient {
   }
 
   /**
+   * @param {(Uint8Array) => Uint8Array} randomizer
+   * @return {TCaBCIClient}
+   */
+  SetRandomizer(randomizer) {
+    this._randomizer = randomizer
+    return this
+  }
+
+  /**
    * @param {SuccessCallback} cb
    * @return {TCaBCIClient}
    */
