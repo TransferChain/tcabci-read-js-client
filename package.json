@@ -1,6 +1,6 @@
 {
   "name": "@tchain/tcabci-read-js-client",
-  "version": "2.8.4",
+  "version": "2.8.5",
   "description": "TransferChain Fastest Read Network WebSocket Client",
   "homepage": "https://github.com/TransferChain/tcabci-read-js-client#readme",
   "bugs": {
@@ -39,9 +39,9 @@
     "lint:check": "oxfmt --check ./ && oxlint ./",
     "test": "pnpm run test:unit && pnpm run test:security && pnpm run test:types",
     "test:all": "pnpm test",
-    "test:coverage": "node --experimental-test-coverage --test test/security.test.js",
+    "test:coverage": "node --experimental-test-coverage --test test/security.test.js test/transaction.test.js",
     "test:unit": "mocha --timeout 5000 test/errors_test.js test/websocketOptions_test.js test/websocket_test.js",
-    "test:security": "node --test test/security.test.js",
+    "test:security": "node --test test/security.test.js test/transaction.test.js",
     "test:types": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2022 test/consumer.ts",
     "test:integration": "mocha --timeout 7000 test/client_test.js"
   },

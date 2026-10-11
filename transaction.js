@@ -146,7 +146,7 @@ export class Transaction {
    * @param {string} sender_addr
    * @param {string} recipient_addr
    * @param {string} data
-   * @param {string} sign
+   * @param {string|import('./bytea.js').ByteaJSON} sign
    * @param {number} fee
    * @param {string} hash
    * @param {string|number|Date} [inserted_at] Date text/RFC3339Nano, Unix milliseconds or Date.
@@ -240,6 +240,7 @@ export class Transaction {
     return this._cipherData
   }
 
+  /** @returns {string|import('./bytea.js').ByteaJSON} Factory signatures are detached and frozen. */
   get Sign() {
     return this._sign
   }
@@ -310,7 +311,7 @@ export class Transaction {
       if (typeof obj.cipher_data !== 'undefined')
         tx._cipherData = cloneAndFreeze(obj.cipher_data)
 
-      tx._sign = obj.sign
+      tx._sign = cloneAndFreeze(obj.sign)
       tx._fee = obj.fee
       tx._hash = obj.hash
 
@@ -435,7 +436,18 @@ export class Transaction {
     if (typeof this._data === 'undefined')
       throw new Error(INVALID_ARGUMENT_WITH_CS('data'))
 
-    if (typeof this._sign !== 'string' || !this._sign.length)
+    if (
+      !(typeof this._sign === 'string' && this._sign.length > 0) &&
+      !(
+        this._sign &&
+        typeof this._sign === 'object' &&
+        !Array.isArray(this._sign) &&
+        [Object.prototype, null].includes(Object.getPrototypeOf(this._sign)) &&
+        typeof this._sign.Bytes === 'string' &&
+        this._sign.Bytes.length > 0 &&
+        this._sign.Status === 2
+      )
+    )
       throw new Error(INVALID_ARGUMENT_WITH_CS('sign'))
 
     if (!Number.isFinite(this._fee) || this._fee < 0)

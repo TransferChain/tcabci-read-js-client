@@ -79,3 +79,14 @@ new Transaction({ inserted_at: new Date() })
 new Transaction({ inserted_at: 1704067200123 })
 // @ts-expect-error invalid date input type
 new Transaction({ inserted_at: true })
+
+const byteaTransaction = new Transaction({
+    sign: { Bytes: 'dGVzdA==', Status: 2 }
+  }),
+  signature = byteaTransaction.Sign
+
+if (typeof signature !== 'string') {
+  const bytes: string = signature.Bytes
+  // @ts-expect-error bytea snapshots are readonly
+  signature.Status = 1
+}
