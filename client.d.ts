@@ -21,6 +21,8 @@ export type {
   WebSocketConstructor
 } from './types.js'
 
+export type Randomizer = (data: Uint8Array) => Uint8Array
+
 export interface TxQuery {
   recipientAddrs?: readonly string[]
   senderAddrs?: readonly string[]
@@ -75,6 +77,7 @@ export default class TCaBCIClient {
 
   SetIsWeb(isWeb: boolean): this
   SetDebug(debug: boolean): this
+  SetRandomizer(randomizer: Randomizer): this
 
   SetSuccessCallback(cb: SuccessCallback | null): this
 
