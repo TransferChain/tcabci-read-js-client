@@ -26,6 +26,7 @@ export default class Message {
   _txTypes
   _data
   _state
+  _clientInstanceID
 
   /**
    * @param {boolean} isWeb
@@ -34,6 +35,7 @@ export default class Message {
    * @param {?Object} signedData
    * @param {?Array<string>} txTypes
    * @param {*} data
+   * @param {string|undefined} clientInstanceID Optional 64- or 128-character lowercase hex instance ID.
    */
   constructor({
     isWeb,
@@ -41,10 +43,12 @@ export default class Message {
     addrs,
     signedData = null,
     txTypes = null,
-    data = null
+    data = null,
+    clientInstanceID
   } = {}) {
     this._is_web = isWeb
     this._type = type
+    this._clientInstanceID = clientInstanceID
 
     if (addrs && Array.isArray(addrs))
       this._addresses = Object.freeze(addresses(addrs))
@@ -128,6 +132,9 @@ export default class Message {
 
       if (typeof obj.state !== 'undefined') msg._state = obj.state
 
+      if (typeof obj.client_instance_id !== 'undefined')
+        msg._clientInstanceID = obj.client_instance_id
+
       msg._validate()
 
       return { message: Object.freeze(msg), error: null }
@@ -142,6 +149,9 @@ export default class Message {
     return JSON.stringify({
       is_web: this._is_web,
       type: this._type,
+      ...(typeof this._clientInstanceID !== 'undefined'
+        ? { client_instance_id: this._clientInstanceID }
+        : {}),
       ...(this._addresses ? { addresses: this._addresses } : {}),
       ...(this._signedAddresses
         ? { signed_addresses: this._signedAddresses }
@@ -153,6 +163,13 @@ export default class Message {
   }
 
   _validate() {
+    if (
+      typeof this._clientInstanceID !== 'undefined' &&
+      (typeof this._clientInstanceID !== 'string' ||
+        !/^(?:[0-9a-f]{64}|[0-9a-f]{128})$/.test(this._clientInstanceID))
+    )
+      throw new Error(INVALID_ARGUMENT_WITH_CS('client_instance_id'))
+
     if (
       typeof this._is_web !== 'undefined' &&
       typeof this._is_web !== 'boolean'

@@ -31,6 +31,7 @@ import { Options } from './websocketOptions.js'
 import { TWebSocket } from './websocket.js'
 import { Transaction, TX_TYPE_LIST } from './transaction.js'
 import { Block } from './block.js'
+import { passKey } from './passKey.js'
 import { HTTP } from './http.js'
 
 /**
@@ -66,6 +67,8 @@ export default class TCaBCIClient {
   _subscribed = false
   _subscribedAddresses = []
   _SubscribedSignedData = {}
+  _clientInstanceID = null
+  _instanceIDPromise = null
   _listenRequested = false
   _connected = false
   _chainName = 'transferchain'
@@ -98,6 +101,11 @@ export default class TCaBCIClient {
   _ws
   _readNodeAddress = READ_NODE_ADDRESS
   _readNodeWSAddress = READ_NODE_WS_ADDRESS
+  /**
+   * @type {(Uint8Array) => Uint8Array}
+   * @private
+   */
+  _randomizer = null
 
   /**
    * Create an HTTP/WebSocket client. Start initiates connection setup;
@@ -311,7 +319,11 @@ export default class TCaBCIClient {
     if (!this.IsConnected()) throw new Error(NOT_CONNECTED)
 
     this._ws.send(
-      new Message({ isWeb: this._isWeb, type: LISTENMessage }).ToJSON()
+      new Message({
+        isWeb: this._isWeb,
+        type: LISTENMessage,
+        clientInstanceID: this._clientInstanceID ?? undefined
+      }).ToJSON()
     )
     this._listenRequested = true
 
@@ -322,6 +334,7 @@ export default class TCaBCIClient {
    * Subscribe to at most 251 unique addresses, each at most 2048 characters.
    * The combined active address list is bounded. Proof maps are copied;
    * caller objects remain mutable. ACK updates IsSubscribed asynchronously.
+   * A random instance ID is retained by this client across reconnects.
    * @param {readonly string[]} addresses
    * @param {Readonly<Record<string, string>>} signedData
    * @param {readonly string[]|null} [txTypes=null]
@@ -329,7 +342,7 @@ export default class TCaBCIClient {
    */
   Subscribe(addresses, signedData, txTypes = null) {
     const requested = validateAddresses(addresses),
-      proof = validateSignedData(signedData)
+      suppliedProof = validateSignedData(signedData)
 
     if (
       txTypes !== null &&
@@ -342,13 +355,20 @@ export default class TCaBCIClient {
     if (!this.IsConnected()) throw new Error(NOT_CONNECTED)
 
     const addrs = validateAddresses([
-      ...new Set([...this._subscribedAddresses, ...requested])
-    ])
+        ...new Set([...this._subscribedAddresses, ...requested])
+      ]),
+      proof = Object.fromEntries(
+        addrs.map((address) => [
+          address,
+          suppliedProof[address] ?? this._SubscribedSignedData[address]
+        ])
+      )
 
     this._ws.send(
       new Message({
         isWeb: true,
         type: SUBSCRIBEMessage,
+        clientInstanceID: this._clientInstanceID,
         addrs: addrs,
         signedData: proof,
         txTypes
@@ -870,7 +890,13 @@ export default class TCaBCIClient {
       this._callCloseCallback(e)
     })
 
-    const start = ws.connect()
+    const start = (async () => {
+      await this._prepareInstanceID(this._randomizer)
+
+      if (!current()) return ws
+
+      return ws.connect()
+    })()
 
     this._startPromise = start
 
@@ -883,6 +909,27 @@ export default class TCaBCIClient {
     } finally {
       if (this._startPromise === start) this._startPromise = null
     }
+  }
+
+  _prepareInstanceID(randomizer = null) {
+    if (this._clientInstanceID !== null)
+      return Promise.resolve(this._clientInstanceID)
+
+    if (this._instanceIDPromise) return this._instanceIDPromise
+
+    const pending = passKey(randomizer)
+      .then((identity) => {
+        this._clientInstanceID ??= identity
+
+        return this._clientInstanceID
+      })
+      .finally(() => {
+        if (this._instanceIDPromise === pending) this._instanceIDPromise = null
+      })
+
+    this._instanceIDPromise = pending
+
+    return pending
   }
 
   async _disconnect(code = 1000) {
@@ -1030,7 +1077,7 @@ export default class TCaBCIClient {
           break
         case Subscription:
           if (_msg.State === OK) {
-            this._setSubscribed(true)
+            this._setSubscribed(this._subscribedAddresses.length > 0)
           } else {
             this._clearSubscription()
           }

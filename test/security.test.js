@@ -93,6 +93,7 @@ test('subscription validates proof and deduplicates without freezing caller', ()
 
   c._connected = true
   c._ws = { send: (value) => sent.push(JSON.parse(value)) }
+  c._clientInstanceID = 'a'.repeat(128)
   c.Subscribe(input, proof).Subscribe(input, proof)
   assert.deepEqual(c.SubscribeAddresses, ['a'])
   assert.equal(Object.isFrozen(input), false)
