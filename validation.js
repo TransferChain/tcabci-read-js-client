@@ -1,5 +1,4 @@
-export const CLIENT_VERSION = '2.8.0',
-  MAX_ADDRESSES = 251
+export const MAX_ADDRESSES = 251
 
 export function positiveInteger(value, name) {
   if (!Number.isSafeInteger(value) || value <= 0)

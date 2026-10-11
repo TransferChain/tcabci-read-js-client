@@ -2,12 +2,12 @@ import { SendThrow } from './util.js'
 import { ERR_NETWORK, FetchError, INVALID_ARGUMENTS } from './errors.js'
 import { Breaker } from './breaker.js'
 import {
-  CLIENT_VERSION,
   endpoint,
   positiveInteger,
   cloneAndFreeze,
   byteLength
 } from './validation.js'
+import { CLIENT_VERSION } from './constants.js'
 
 export class HTTP {
   _baseURL

@@ -1,5 +1,6 @@
 import { createWSAuthorityV3 } from './authority.js'
-import { CLIENT_VERSION, endpoint, positiveInteger } from './validation.js'
+import { endpoint, positiveInteger } from './validation.js'
+import { CLIENT_VERSION } from './constants.js'
 
 export const HTTPSPort = 443,
   HTTPPort = 80,
@@ -332,25 +333,30 @@ export class Options {
   make() {
     let WS = this._customWS
 
-    if (this._authority) {
+    if (this._authority || typeof WS?.prototype?.on === 'function') {
       const Base = WS,
-        options = this
+        options = this,
+        requiresAuthority = Boolean(this._authority)
 
       WS = class extends Base {
         constructor(url, protocols) {
           const authority = options._authority
 
-          if (!authority)
+          if (requiresAuthority && !authority)
             throw new Error('Websocket authority configuration released')
 
           super(url, protocols, {
             followRedirects: false,
             headers: {
               Client: `tcabci-read-js-client/${CLIENT_VERSION}`,
-              'X-Authority': createWSAuthorityV3(
-                authority.address,
-                authority.sign
-              )
+              ...(authority
+                ? {
+                    'X-Authority': createWSAuthorityV3(
+                      authority.address,
+                      authority.sign
+                    )
+                  }
+                : {})
             }
           })
         }
@@ -370,7 +376,7 @@ export class Options {
       // ReconnectingWebSocket debug logs outgoing payloads. Never enable it.
       debug: false,
       headers: {
-        Client: `tcabaci-read-js-client/${this._version}`
+        Client: `tcabci-read-js-client/${this._version}`
       }
     }
   }
