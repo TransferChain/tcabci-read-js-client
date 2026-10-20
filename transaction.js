@@ -58,6 +58,11 @@ export const TX_TYPE_MASTER = 'initial_storage',
   TX_TYPE_COLLECTION_POLICY = 'coll_policy',
   TX_TYPE_DATAV2_COLLECTION = 'datav2_coll',
   TX_TYPE_DATAV2F = 'datav2F',
+  // Shared with the Go read client, the SDKs and the read-node tx_type enum.
+  TX_TYPE_SUB_MASTER = 'initial_sub_storage',
+  TX_TYPE_SUB_ADDRESSES = 'interim_sub_storages',
+  TX_TYPE_NS = 'ns',
+  TX_TYPE_COLLECTIONF = 'collF',
   /** @type {ReadonlyArray<import('./transaction.js').TXType>} */
   TX_TYPE_LIST = Object.freeze([
     TX_TYPE_MASTER,
@@ -116,7 +121,11 @@ export const TX_TYPE_MASTER = 'initial_storage',
     TX_TYPE_COLLECTION,
     TX_TYPE_COLLECTION_POLICY,
     TX_TYPE_DATAV2_COLLECTION,
-    TX_TYPE_DATAV2F
+    TX_TYPE_DATAV2F,
+    TX_TYPE_SUB_MASTER,
+    TX_TYPE_SUB_ADDRESSES,
+    TX_TYPE_NS,
+    TX_TYPE_COLLECTIONF
   ])
 
 export class Transaction {

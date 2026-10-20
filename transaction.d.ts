@@ -59,6 +59,10 @@ export type TXType =
   | 'coll_policy'
   | 'datav2_coll'
   | 'datav2F'
+  | 'initial_sub_storage'
+  | 'interim_sub_storages'
+  | 'ns'
+  | 'collF'
 
 export declare const TX_TYPE_MASTER: 'initial_storage',
   TX_TYPE_ADDRESS: 'interim_storage',
@@ -117,6 +121,10 @@ export declare const TX_TYPE_MASTER: 'initial_storage',
   TX_TYPE_COLLECTION_POLICY: 'coll_policy',
   TX_TYPE_DATAV2_COLLECTION: 'datav2_coll',
   TX_TYPE_DATAV2F: 'datav2F',
+  TX_TYPE_SUB_MASTER: 'initial_sub_storage',
+  TX_TYPE_SUB_ADDRESSES: 'interim_sub_storages',
+  TX_TYPE_NS: 'ns',
+  TX_TYPE_COLLECTIONF: 'collF',
   TX_TYPE_LIST: readonly TXType[]
 
 export interface TransactionInput {
