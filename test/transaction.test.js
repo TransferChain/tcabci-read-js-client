@@ -1,6 +1,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { Transaction, TX_TYPE_LIST } from '../transaction.js'
+import {
+  Transaction,
+  TX_TYPE_LIST,
+  TX_TYPE_COLLECTIONF,
+  TX_TYPE_NS,
+  TX_TYPE_SUB_ADDRESSES,
+  TX_TYPE_SUB_MASTER
+} from '../transaction.js'
 import { Block } from '../block.js'
 
 const tx = {
@@ -187,3 +194,30 @@ for (const inserted_at of [0, new Date(0), '1970-01-01T00:00:00.000000Z']) {
     assert.equal(result.transaction.InsertedAt.getTime(), 0)
   })
 }
+
+// The shared types must stay accepted with the wire values the Go read
+// client, the SDKs and the read-node tx_type enum use.
+test('shared collection and sub storage types are accepted', () => {
+  assert.equal(TX_TYPE_COLLECTIONF, 'collF')
+  assert.equal(TX_TYPE_NS, 'ns')
+  assert.equal(TX_TYPE_SUB_MASTER, 'initial_sub_storage')
+  assert.equal(TX_TYPE_SUB_ADDRESSES, 'interim_sub_storages')
+
+  for (const typ of [
+    'coll',
+    'coll_policy',
+    'multi_collection',
+    'collF',
+    'datav2',
+    'datav2_policy',
+    'datav2_coll',
+    'datav2F',
+    'multi_dataV2',
+    'multi_passwd',
+    'initial_sub_storage',
+    'interim_sub_storages',
+    'ns'
+  ]) {
+    assert.ok(TX_TYPE_LIST.includes(typ), typ)
+  }
+})
